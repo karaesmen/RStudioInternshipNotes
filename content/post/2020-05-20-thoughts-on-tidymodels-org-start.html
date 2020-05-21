@@ -49,12 +49,12 @@ tags:
 </div>
 <div id="some-thoughts-on-the-tutorial" class="section level1">
 <h1>Some thoughts on the tutorial</h1>
-<p>I believe any “start” tutorial is very difficult to design as it is expected to serve different purposes depending on the user approaching the subject. Beginners who are less experienced with statistical modeling in R will likely be looking for a tutorial that explains some of the statistical background and shows that fitting, visualizing and predicting a model in R is easy and approachable. Users that have some modeling experience in R will be looking for how tidymodels makes the process easier compared to their current workflow. For example, users who completely embraced the tidyverse are very excited to learn about tidymodels. But they are still somewhat confused about the high level mechanics, which discourages them from learning tidymodels in more detail and making it a part of their day to day workflow.</p>
+<p>I believe any “start” tutorial is very difficult to design as it is expected to serve different purposes depending on the user approaching the subject. Beginners who are less experienced with statistical modeling in R will likely be looking for a tutorial that explains some of the statistical background and shows that fitting, visualizing and predicting a model in R is easy and approachable. Users that have some modeling experience in R will be looking for how tidymodels makes the process easier compared to their current workflow. For example, users who completely embraced the tidyverse are very excited to learn about tidymodels, but they are still somewhat confused about the high level mechanics, which discourages them from learning tidymodels in more detail and making it a part of their day to day workflow.</p>
 <p>Understandably, “start tutorials” seem to consider all these points and aims to find a happy medium. In my opinion, the tutorial seems quite approachable as a beginner as it uses familiar/simple datasets and simple models. This however makes it (in someways) more difficult to show the main point/philosophy of the <code>parsnip</code> package right away.</p>
 <ul>
 <li><p>Maybe it doesn’t have to be a part of the tutorial, but some kind of concept map might be very useful to initially introduce beginners to the mechanics of the <code>tidymodels</code> universe? Maybe welcome page?</p></li>
-<li><p>A reference page like ggplot2 would probably be incredibly helpful in getting people up to speed. I know interactive tables for function/argument search are available. But reference page for ggplot is beyond that; with its categorized structure, it actually familiarizes the user with the logic of its workflow. A page that puts all pieces/functions together like that tidymodels would clarify a lot of things.</p></li>
-<li><p>There should be more emphasis on how to get info on these functions from tables and R help files. For example, once we decided to go with linear regression it would be smart to start with ?linear_reg to list possible engines and parameter translations.</p></li>
+<li><p>A reference page like ggplot2 would probably be incredibly helpful in getting people up to speed. I know interactive tables for function/argument search are available. But reference page for ggplot is beyond that; with its categorized structure, it actually familiarizes the user with the logic of its workflow. A page that puts all pieces/functions together like that for tidymodels would clarify a lot of things.</p></li>
+<li><p>There should be more emphasis on how to get info on these functions from tables and R help files. For example, once we decided to go with linear regression it would be smart to start with <code>?linear_reg</code> to list possible engines and parameter translations.</p></li>
 </ul>
 <div id="build-a-model" class="section level2">
 <h2>1. Build a model</h2>
@@ -73,7 +73,7 @@ tags:
 <div id="resampling" class="section level2">
 <h2>3. Resampling</h2>
 <ul>
-<li>Clarify text “90% of the data” is “90% of the training set”, if we are avoiding calling it a “training set” than we should stick to “other set” or some term that will jive with the next articles of the tutorial?</li>
+<li>Clarify text “90% of the data” is “90% of the training set”, if we are avoiding calling it a “training set” than we should stick to “analysis set” or some term that will jive with the next articles of the tutorial?</li>
 </ul>
 <p><a href="https://github.com/tidymodels/tidymodels.org/blob/master/content/start/resampling/index.Rmarkdown#L231">See in github</a></p>
 <pre><code>The other 90% of the data (about 1363 cells) are used to fit the model. Again, this sounds similar to a training set, so in tidymodels we call this data the analysis set. This model, trained on the analysis set, is applied to the assessment set to generate predictions, and performance statistics are computed based on those predictions.</code></pre>
