@@ -14,7 +14,7 @@ tags:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning=FALSE, error=FALSE, message = FALSE)
+knitr::opts_chunk$set(eval=FALSE, echo = TRUE, warning=FALSE, error=FALSE, message = FALSE)
 library(tidyverse)
 library(knitr)
 ```
@@ -30,7 +30,7 @@ We organized a R-Ladies Columbus (OH) **virtual** tidymodels meetup on May 14th 
 I setup a poll asking participants (n=22) about their experience with tidyverse, tidymodels and overall predictive modeling at the beginning of the session. Session was quite interactive, participants asked questions using the chat or by unmuting their mic and interrupting the speaker.
 
 
-```{r, fig.height=3, fig.width=8}
+```{r, fig.height=3, fig.width=8, echo=FALSE, eval=TRUE}
 tribble(
   ~question, ~Yes, ~No, ~Not_sure, ~Sometimes,
   "Have you used\ntidyverse before?", 0.82, 0.23, 0, NA,
@@ -63,7 +63,7 @@ Understandably, "start tutorials" seem to consider all these points and aims to 
 
 1. Maybe it doesn't have to be a part of the tutorial, but some kind of concept map might be very useful to initially introduce beginners to the mechanics of the `tidymodels` universe? Maybe welcome page?     
 
-1. (It's probably a lot of work, but) A reference page like ggplot2 would probably be incredibly helpful in getting people up to speed. I know interactive tables for function/argument search are available. But reference page for ggplot is beyond that; with its categorized structure it actually familiarizes the user with the logic of its workflow.
+1. A reference page like ggplot2 would probably be incredibly helpful in getting people up to speed. I know interactive tables for function/argument search are available. But reference page for ggplot is beyond that; with its categorized structure, it actually familiarizes the user with the logic of its workflow. A page that puts all pieces/functions together like that tidymodels would clarify a lot of things.
 
 1. There should be more emphasis on how to get info on these functions from tables and R help files. For example, once we decided to go with linear regression it would be smart to start with ?linear_reg to list possible engines and parameter translations.
 
@@ -78,7 +78,8 @@ Understandably, "start tutorials" seem to consider all these points and aims to 
 
 ## 2. Preprocess with recipies
 
-1. Maybe introduce the concept of `bake()` earlier?
+1. Not being able to easily see what dummy variables were actually generated from the recipe steps was troubling to me. In the tutorial user does not get to see these variables basically until after the fit. I still can't figure out how I'm supposed to see what's going into my model before fitting it. This would be quite inconvenient if fitting step took sometime. For example some "date_USCPulaskisBirthday" (Casimir Pulaski's Birthday) variable is included in the model. I didn't even know this existed until now. But beyond just selcting holidays to use, give a tip about how to check your model matrix if you wanted before fitting?
+
 
 ## 3. Resampling
 
@@ -112,3 +113,61 @@ rf_fit_rs %>%
 
 
 ## 5. Case study
+
+1.Data splitting objects through out the tutorial can be a bit confusing. Adding the Ns on the diagram would help.
+
+This part is good: regular training/test split.
+```{r}
+set.seed(123)
+splits      <- initial_split(hotels, strata = children)
+
+hotel_other <- training(splits)
+hotel_test  <- testing(splits)
+```
+
+
+This is also good: some portion of training kept for validation. More info on this validation_set object here would help.    
+
+```{r}
+set.seed(234)
+val_set <- validation_split(hotel_other, 
+                            strata = children, 
+                            prop = 0.80)
+val_set
+#> # Validation Set Split (0.8/0.2)  using stratification 
+#> # A tibble: 1 x 2
+#>   splits             id        
+#>   <named list>       <chr>     
+#> 1 <split [30K/7.5K]> validation
+
+```
+
+This part gets confusing: when creating the recipe we go back to using `hotel_other` when I look at nrows, `hotel_other` still has 37,500 rows and not the 30,000 rows I expected to see for my training set.
+
+```{r}
+lr_recipe <- 
+  recipe(children ~ ., data = hotel_other) %>% 
+  step_date(arrival_date) %>% 
+  step_holiday(arrival_date, holidays = holidays) %>% 
+  step_rm(arrival_date) %>% 
+  step_dummy(all_nominal(), -all_outcomes()) %>% 
+  step_zv(all_predictors()) %>% 
+  step_normalize(all_predictors())
+```
+
+Then with this recipe we create the workflow and move on to tune the model, where tune_grid takes `val_set` as input.
+
+```{r}
+lr_res <- 
+  lr_workflow %>% 
+  tune_grid(val_set,
+            grid = lr_reg_grid,
+            control = control_grid(save_pred = TRUE),
+            metrics = metric_set(roc_auc))
+```
+
+From this I conclude that `val_set` contains the index/information that is then used to split `hotel_other`  during the tuning process. I think there should be a note about this in the text early on.
+
+
+
+

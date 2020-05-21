@@ -53,7 +53,7 @@ tags:
 <p>Understandably, “start tutorials” seem to consider all these points and aims to find a happy medium. In my opinion, the tutorial seems quite approachable as a beginner as it uses familiar/simple datasets and simple models. This however makes it (in someways) more difficult to show the main point/philosophy of the <code>parsnip</code> package right away.</p>
 <ol style="list-style-type: decimal">
 <li><p>Maybe it doesn’t have to be a part of the tutorial, but some kind of concept map might be very useful to initially introduce beginners to the mechanics of the <code>tidymodels</code> universe? Maybe welcome page?</p></li>
-<li><p>(It’s probably a lot of work, but) A reference page like ggplot2 would probably be incredibly helpful in getting people up to speed. I know interactive tables for function/argument search are available. But reference page for ggplot is beyond that; with its categorized structure it actually familiarizes the user with the logic of its workflow.</p></li>
+<li><p>A reference page like ggplot2 would probably be incredibly helpful in getting people up to speed. I know interactive tables for function/argument search are available. But reference page for ggplot is beyond that; with its categorized structure, it actually familiarizes the user with the logic of its workflow. A page that puts all pieces/functions together like that tidymodels would clarify a lot of things.</p></li>
 <li><p>There should be more emphasis on how to get info on these functions from tables and R help files. For example, once we decided to go with linear regression it would be smart to start with ?linear_reg to list possible engines and parameter translations.</p></li>
 </ol>
 <div id="build-a-model" class="section level2">
@@ -67,7 +67,7 @@ tags:
 <div id="preprocess-with-recipies" class="section level2">
 <h2>2. Preprocess with recipies</h2>
 <ol style="list-style-type: decimal">
-<li>Maybe introduce the concept of <code>bake()</code> earlier?</li>
+<li>Not being able to easily see what dummy variables were actually generated from the recipe steps was troubling to me. In the tutorial user does not get to see these variables basically until after the fit. I still can’t figure out how I’m supposed to see what’s going into my model before fitting it. This would be quite inconvenient if fitting step took sometime. For example some “date_USCPulaskisBirthday” (Casimir Pulaski’s Birthday) variable is included in the model. I didn’t even know this existed until now. But beyond just selcting holidays to use, give a tip about how to check your model matrix if you wanted before fitting?</li>
 </ol>
 </div>
 <div id="resampling" class="section level2">
@@ -97,5 +97,40 @@ tags:
 </div>
 <div id="case-study" class="section level2">
 <h2>5. Case study</h2>
+<p>1.Data splitting objects through out the tutorial can be a bit confusing. Adding the Ns on the diagram would help.</p>
+<p>This part is good: regular training/test split.</p>
+<pre class="r"><code>set.seed(123)
+splits      &lt;- initial_split(hotels, strata = children)
+
+hotel_other &lt;- training(splits)
+hotel_test  &lt;- testing(splits)</code></pre>
+<p>This is also good: some portion of training kept for validation. More info on this validation_set object here would help.</p>
+<pre class="r"><code>set.seed(234)
+val_set &lt;- validation_split(hotel_other, 
+                            strata = children, 
+                            prop = 0.80)
+val_set
+#&gt; # Validation Set Split (0.8/0.2)  using stratification 
+#&gt; # A tibble: 1 x 2
+#&gt;   splits             id        
+#&gt;   &lt;named list&gt;       &lt;chr&gt;     
+#&gt; 1 &lt;split [30K/7.5K]&gt; validation</code></pre>
+<p>This part gets confusing: when creating the recipe we go back to using <code>hotel_other</code> when I look at nrows, <code>hotel_other</code> still has 37,500 rows and not the 30,000 rows I expected to see for my training set.</p>
+<pre class="r"><code>lr_recipe &lt;- 
+  recipe(children ~ ., data = hotel_other) %&gt;% 
+  step_date(arrival_date) %&gt;% 
+  step_holiday(arrival_date, holidays = holidays) %&gt;% 
+  step_rm(arrival_date) %&gt;% 
+  step_dummy(all_nominal(), -all_outcomes()) %&gt;% 
+  step_zv(all_predictors()) %&gt;% 
+  step_normalize(all_predictors())</code></pre>
+<p>Then with this recipe we create the workflow and move on to tune the model, where tune_grid takes <code>val_set</code> as input.</p>
+<pre class="r"><code>lr_res &lt;- 
+  lr_workflow %&gt;% 
+  tune_grid(val_set,
+            grid = lr_reg_grid,
+            control = control_grid(save_pred = TRUE),
+            metrics = metric_set(roc_auc))</code></pre>
+<p>From this I conclude that <code>val_set</code> contains the index/information that is then used to split <code>hotel_other</code> during the tuning process. I think there should be a note about this in the text early on.</p>
 </div>
 </div>
