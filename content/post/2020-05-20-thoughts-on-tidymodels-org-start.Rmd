@@ -61,29 +61,29 @@ I believe any "start" tutorial is very difficult to design as it is expected to 
 
 Understandably, "start tutorials" seem to consider all these points and aims to find a happy medium. In my opinion, the tutorial seems quite approachable as a beginner as it uses familiar/simple datasets and simple models. This however makes it (in someways) more difficult to show the main point/philosophy of the `parsnip` package right away.   
 
-1. Maybe it doesn't have to be a part of the tutorial, but some kind of concept map might be very useful to initially introduce beginners to the mechanics of the `tidymodels` universe? Maybe welcome page?     
+- Maybe it doesn't have to be a part of the tutorial, but some kind of concept map might be very useful to initially introduce beginners to the mechanics of the `tidymodels` universe? Maybe welcome page?     
 
-1. A reference page like ggplot2 would probably be incredibly helpful in getting people up to speed. I know interactive tables for function/argument search are available. But reference page for ggplot is beyond that; with its categorized structure, it actually familiarizes the user with the logic of its workflow. A page that puts all pieces/functions together like that tidymodels would clarify a lot of things.
+- A reference page like ggplot2 would probably be incredibly helpful in getting people up to speed. I know interactive tables for function/argument search are available. But reference page for ggplot is beyond that; with its categorized structure, it actually familiarizes the user with the logic of its workflow. A page that puts all pieces/functions together like that tidymodels would clarify a lot of things.
 
-1. There should be more emphasis on how to get info on these functions from tables and R help files. For example, once we decided to go with linear regression it would be smart to start with ?linear_reg to list possible engines and parameter translations.
+- There should be more emphasis on how to get info on these functions from tables and R help files. For example, once we decided to go with linear regression it would be smart to start with ?linear_reg to list possible engines and parameter translations.
 
 ## 1. Build a model
 
+- We had to visit the `parsnip.tidymodels.org` and `tidymodels.org/find` regularly to explain how `parsnip` works at the beginning. Maybe a note can be added at the end of the steps to add these links? (But it was our bad that we somehow missed to show `parsnip.tidymodels.org/reference/linear_reg.html`). Especially a note on `tidymodels.org/find` would be very helpful?   
 
-1. We had to visit the `parsnip.tidymodels.org` and `tidymodels.org/find` regularly to explain how `parsnip` works at the beginning. Maybe a note can be added at the end of the steps to add these links? (But it was our bad that we somehow missed to show `parsnip.tidymodels.org/reference/linear_reg.html`). Especially a note on `tidymodels.org/find` would be very helpful? 
+- `parsnip.tidymodels.org/reference/linear_reg.html` has `%&gt;%` instead of the `%>%`. 
 
-1. `parsnip.tidymodels.org/reference/linear_reg.html` has `%&gt;%` instead of the `%>%`. 
-
-1. While the switch to bayesian with simple line change is very impressive, we had issues explaining where to find the arguments for the `set_engine`. As it creates a contrast to random forest example in `parsnip.tidymodels.org`, where arguments for random forest from 3 different packages are harmonized and parsnip specific arguments are needed to set these arguments in `set_engine`. In case of `rstanarm` these arguments are only coming from `rstanarm`. Maybe `?linear_reg` should be emphasized and looking for **Parameter translations** in the help document should be encouraged. 
+- While the switch to bayesian with simple line change is very impressive, we had issues explaining where to find the arguments for the `set_engine`. As it creates a contrast to random forest example in `parsnip.tidymodels.org`, where arguments for random forest from 3 different packages are harmonized and parsnip specific arguments are needed to set these arguments in `set_engine`. In case of `rstanarm` these arguments are only coming from `rstanarm`. Maybe `?linear_reg` should be emphasized and looking for **Parameter translations** in the help document should be encouraged. 
 
 ## 2. Preprocess with recipies
 
-1. Not being able to easily see what dummy variables were actually generated from the recipe steps was troubling to me. In the tutorial user does not get to see these variables basically until after the fit. I still can't figure out how I'm supposed to see what's going into my model before fitting it. This would be quite inconvenient if fitting step took sometime. For example some "date_USCPulaskisBirthday" (Casimir Pulaski's Birthday) variable is included in the model. I didn't even know this existed until now. But beyond just selcting holidays to use, give a tip about how to check your model matrix if you wanted before fitting?
+- Not being able to easily see what dummy variables were actually generated from the recipe steps was troubling to me. In the tutorial user does not get to see these variables basically until after the fit. I still can't figure out how I'm supposed to see what's going into my model before fitting it. This would be quite inconvenient if fitting step took sometime. For example some "date_USCPulaskisBirthday" (Casimir Pulaski's Birthday) variable is included in the model. I didn't even know this existed until now. But beyond just selcting holidays to use, give a tip about how to check your model matrix if you wanted before fitting?   
+
 
 
 ## 3. Resampling
 
-1. Clarify text "90% of the data" is "90% of the training set", if we are avoiding calling it a "training set" than we should stick to "other set" or some term that will jive with the next articles of the tutorial? 
+- Clarify text "90% of the data" is "90% of the training set", if we are avoiding calling it a "training set" than we should stick to "other set" or some term that will jive with the next articles of the tutorial?   
 
 [See in github](https://github.com/tidymodels/tidymodels.org/blob/master/content/start/resampling/index.Rmarkdown#L231)
 
@@ -91,9 +91,9 @@ Understandably, "start tutorials" seem to consider all these points and aims to 
 The other 90% of the data (about 1363 cells) are used to fit the model. Again, this sounds similar to a training set, so in tidymodels we call this data the analysis set. This model, trained on the analysis set, is applied to the assessment set to generate predictions, and performance statistics are computed based on those predictions.
 ```        
 
-2. Mention it's possible to add strata to `vfold_cv()`?
+- Mention it's possible to add strata to `vfold_cv()`?   
 
-3. Maybe it's still worth showing how to unnest metrics to see agreement across folds and visualize? This maybe good for the interactive tutorial.
+- Maybe it's still worth showing how to unnest metrics to see agreement across folds and visualize? This maybe good for the interactive tutorial.   
 
 ```{r, eval=FALSE, echo=TRUE}
 rf_fit_rs %>% 
@@ -109,12 +109,12 @@ rf_fit_rs %>%
 
 ## 4. Hyperparameter Tuning
 
-1. Link somewhere explaining how "these sensible values" in dial were chosen? I couldn't find them in the help file.
+- Link somewhere explaining how "these sensible values" in dial were chosen? I couldn't find them in the help file.   
 
 
 ## 5. Case study
 
-1.Data splitting objects through out the tutorial can be a bit confusing. Adding the Ns on the diagram would help.
+- Data splitting objects through out the tutorial can be a bit confusing. Adding the Ns on the diagram would help.   
 
 This part is good: regular training/test split.
 ```{r}

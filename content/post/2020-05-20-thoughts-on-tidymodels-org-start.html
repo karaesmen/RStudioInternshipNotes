@@ -51,36 +51,36 @@ tags:
 <h1>Some thoughts on the tutorial</h1>
 <p>I believe any “start” tutorial is very difficult to design as it is expected to serve different purposes depending on the user approaching the subject. Beginners who are less experienced with statistical modeling in R will likely be looking for a tutorial that explains some of the statistical background and shows that fitting, visualizing and predicting a model in R is easy and approachable. Users that have some modeling experience in R will be looking for how tidymodels makes the process easier compared to their current workflow. For example, users who completely embraced the tidyverse are very excited to learn about tidymodels. But they are still somewhat confused about the high level mechanics, which discourages them from learning tidymodels in more detail and making it a part of their day to day workflow.</p>
 <p>Understandably, “start tutorials” seem to consider all these points and aims to find a happy medium. In my opinion, the tutorial seems quite approachable as a beginner as it uses familiar/simple datasets and simple models. This however makes it (in someways) more difficult to show the main point/philosophy of the <code>parsnip</code> package right away.</p>
-<ol style="list-style-type: decimal">
+<ul>
 <li><p>Maybe it doesn’t have to be a part of the tutorial, but some kind of concept map might be very useful to initially introduce beginners to the mechanics of the <code>tidymodels</code> universe? Maybe welcome page?</p></li>
 <li><p>A reference page like ggplot2 would probably be incredibly helpful in getting people up to speed. I know interactive tables for function/argument search are available. But reference page for ggplot is beyond that; with its categorized structure, it actually familiarizes the user with the logic of its workflow. A page that puts all pieces/functions together like that tidymodels would clarify a lot of things.</p></li>
 <li><p>There should be more emphasis on how to get info on these functions from tables and R help files. For example, once we decided to go with linear regression it would be smart to start with ?linear_reg to list possible engines and parameter translations.</p></li>
-</ol>
+</ul>
 <div id="build-a-model" class="section level2">
 <h2>1. Build a model</h2>
-<ol style="list-style-type: decimal">
+<ul>
 <li><p>We had to visit the <code>parsnip.tidymodels.org</code> and <code>tidymodels.org/find</code> regularly to explain how <code>parsnip</code> works at the beginning. Maybe a note can be added at the end of the steps to add these links? (But it was our bad that we somehow missed to show <code>parsnip.tidymodels.org/reference/linear_reg.html</code>). Especially a note on <code>tidymodels.org/find</code> would be very helpful?</p></li>
 <li><p><code>parsnip.tidymodels.org/reference/linear_reg.html</code> has <code>%&amp;gt;%</code> instead of the <code>%&gt;%</code>.</p></li>
 <li><p>While the switch to bayesian with simple line change is very impressive, we had issues explaining where to find the arguments for the <code>set_engine</code>. As it creates a contrast to random forest example in <code>parsnip.tidymodels.org</code>, where arguments for random forest from 3 different packages are harmonized and parsnip specific arguments are needed to set these arguments in <code>set_engine</code>. In case of <code>rstanarm</code> these arguments are only coming from <code>rstanarm</code>. Maybe <code>?linear_reg</code> should be emphasized and looking for <strong>Parameter translations</strong> in the help document should be encouraged.</p></li>
-</ol>
+</ul>
 </div>
 <div id="preprocess-with-recipies" class="section level2">
 <h2>2. Preprocess with recipies</h2>
-<ol style="list-style-type: decimal">
+<ul>
 <li>Not being able to easily see what dummy variables were actually generated from the recipe steps was troubling to me. In the tutorial user does not get to see these variables basically until after the fit. I still can’t figure out how I’m supposed to see what’s going into my model before fitting it. This would be quite inconvenient if fitting step took sometime. For example some “date_USCPulaskisBirthday” (Casimir Pulaski’s Birthday) variable is included in the model. I didn’t even know this existed until now. But beyond just selcting holidays to use, give a tip about how to check your model matrix if you wanted before fitting?</li>
-</ol>
+</ul>
 </div>
 <div id="resampling" class="section level2">
 <h2>3. Resampling</h2>
-<ol style="list-style-type: decimal">
+<ul>
 <li>Clarify text “90% of the data” is “90% of the training set”, if we are avoiding calling it a “training set” than we should stick to “other set” or some term that will jive with the next articles of the tutorial?</li>
-</ol>
+</ul>
 <p><a href="https://github.com/tidymodels/tidymodels.org/blob/master/content/start/resampling/index.Rmarkdown#L231">See in github</a></p>
 <pre><code>The other 90% of the data (about 1363 cells) are used to fit the model. Again, this sounds similar to a training set, so in tidymodels we call this data the analysis set. This model, trained on the analysis set, is applied to the assessment set to generate predictions, and performance statistics are computed based on those predictions.</code></pre>
-<ol start="2" style="list-style-type: decimal">
+<ul>
 <li><p>Mention it’s possible to add strata to <code>vfold_cv()</code>?</p></li>
 <li><p>Maybe it’s still worth showing how to unnest metrics to see agreement across folds and visualize? This maybe good for the interactive tutorial.</p></li>
-</ol>
+</ul>
 <pre class="r"><code>rf_fit_rs %&gt;% 
   select(id, .metrics) %&gt;% 
   unnest %&gt;%
@@ -91,13 +91,15 @@ tags:
 </div>
 <div id="hyperparameter-tuning" class="section level2">
 <h2>4. Hyperparameter Tuning</h2>
-<ol style="list-style-type: decimal">
+<ul>
 <li>Link somewhere explaining how “these sensible values” in dial were chosen? I couldn’t find them in the help file.</li>
-</ol>
+</ul>
 </div>
 <div id="case-study" class="section level2">
 <h2>5. Case study</h2>
-<p>1.Data splitting objects through out the tutorial can be a bit confusing. Adding the Ns on the diagram would help.</p>
+<ul>
+<li>Data splitting objects through out the tutorial can be a bit confusing. Adding the Ns on the diagram would help.</li>
+</ul>
 <p>This part is good: regular training/test split.</p>
 <pre class="r"><code>set.seed(123)
 splits      &lt;- initial_split(hotels, strata = children)
