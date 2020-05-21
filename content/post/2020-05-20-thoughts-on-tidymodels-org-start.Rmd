@@ -3,6 +3,9 @@ title: Thoughts on tidymodels.org/start
 author: Ezgi Karaesmen
 date: '2020-05-20'
 slug: thoughts-on-tidymodels-org-start
+output: 
+  blogdown::html_page:
+    toc: true
 categories:
   - R
 tags:
