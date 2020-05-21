@@ -1,0 +1,111 @@
+---
+title: Thoughts on tidymodels.org/start
+author: Ezgi Karaesmen
+date: '2020-05-20'
+slug: thoughts-on-tidymodels-org-start
+categories:
+  - R
+tags:
+  - tidymodels
+  - education
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, error=FALSE, message = FALSE)
+library(tidyverse)
+library(knitr)
+```
+
+# Introduction
+
+## Setup
+
+We organized a R-Ladies Columbus (OH) **virtual** tidymodels meetup on May 14th 2020. Katie Sasso, one of the co-organizers of R-Ladies Columbus, shared her screen and went over the material with minimal preparation. Katie transferred most of the existing material at `tidymodels.org/start` to a markdown document on RStudio Cloud and shared the [session link](https://rstudio.cloud/project/1276162) with the rest of the meetup participants. She went back and forth between her interactive RStudio Cloud session and the `tidymodels.org/start` page as well as other articles relevant to `parsnip` and other `tidymodels` packages. 
+
+## Participants
+
+I setup a poll asking participants (n=22) about their experience with tidyverse, tidymodels and overall predictive modeling at the beginning of the session. Session was quite interactive, participants asked questions using the chat or by unmuting their mic and interrupting the speaker.
+
+
+```{r, fig.height=3, fig.width=8}
+tribble(
+  ~question, ~Yes, ~No, ~Not_sure, ~Sometimes,
+  "Have you used\ntidyverse before?", 0.82, 0.23, 0, NA,
+  "Have you used\ntidymodels before?", 0.18, 0.77, 0.05, NA,
+  "Do you build predictive models\non your day to day job?", 0.23, 0.42, NA, 0.36
+) %>%
+  gather("answer", "freq", -question) %>%
+  mutate(freq=freq*22,
+         answer=factor(answer, levels=c("Yes", "No", "Not_sure", "Sometimes"))) %>%
+  ggplot(aes(question, freq, fill=answer)) +
+    geom_col() +
+  scale_fill_viridis_d(option="plasma") +
+  coord_flip() +
+  theme_minimal() +
+  xlab("") + ylab("") +
+  theme(legend.title = element_blank())
+  
+```
+
+## What was covered during the session
+
+During our ~90 min session, we were only able to cover steps (1) Build a model and (2) Preprocess your data with recipes. We also visited other relevant websites to supplement the material. Katie Sasso transferred some of the material to an RMarkdown in an RStudio Cloud session and shared it with everyone. 
+ 
+
+# Some thoughts on the tutorial
+
+I believe any "start" tutorial is very difficult to design as it is expected to serve different purposes depending on the user approaching the subject. Beginners who are less experienced with statistical modeling in R will likely be looking for a tutorial that explains some of the statistical background and shows that fitting, visualizing and predicting a model in R is easy and approachable. Users that have some modeling experience in R will be looking for how tidymodels makes the process easier compared to their current workflow. For example, users who completely embraced the tidyverse are very excited to learn about tidymodels. But they are still somewhat confused about the high level mechanics, which discourages them from learning tidymodels in more detail and making it a part of their day to day workflow. 
+
+Understandably, "start tutorials" seem to consider all these points and aims to find a happy medium. In my opinion, the tutorial seems quite approachable as a beginner as it uses familiar/simple datasets and simple models. This however makes it (in someways) more difficult to show the main point/philosophy of the `parsnip` package right away.   
+
+1. Maybe it doesn't have to be a part of the tutorial, but some kind of concept map might be very useful to initially introduce beginners to the mechanics of the `tidymodels` universe? Maybe welcome page?     
+
+1. (It's probably a lot of work, but) A reference page like ggplot2 would probably be incredibly helpful in getting people up to speed. I know interactive tables for function/argument search are available. But reference page for ggplot is beyond that; with its categorized structure it actually familiarizes the user with the logic of its workflow.
+
+1. There should be more emphasis on how to get info on these functions from tables and R help files. For example, once we decided to go with linear regression it would be smart to start with ?linear_reg to list possible engines and parameter translations.
+
+## 1. Build a model
+
+
+1. We had to visit the `parsnip.tidymodels.org` and `tidymodels.org/find` regularly to explain how `parsnip` works at the beginning. Maybe a note can be added at the end of the steps to add these links? (But it was our bad that we somehow missed to show `parsnip.tidymodels.org/reference/linear_reg.html`). Especially a note on `tidymodels.org/find` would be very helpful? 
+
+1. `parsnip.tidymodels.org/reference/linear_reg.html` has `%&gt;%` instead of the `%>%`. 
+
+1. While the switch to bayesian with simple line change is very impressive, we had issues explaining where to find the arguments for the `set_engine`. As it creates a contrast to random forest example in `parsnip.tidymodels.org`, where arguments for random forest from 3 different packages are harmonized and parsnip specific arguments are needed to set these arguments in `set_engine`. In case of `rstanarm` these arguments are only coming from `rstanarm`. Maybe `?linear_reg` should be emphasized and looking for **Parameter translations** in the help document should be encouraged. 
+
+## 2. Preprocess with recipies
+
+1. Maybe introduce the concept of `bake()` earlier?
+
+## 3. Resampling
+
+1. Clarify text "90% of the data" is "90% of the training set", if we are avoiding calling it a "training set" than we should stick to "other set" or some term that will jive with the next articles of the tutorial? 
+
+[See in github](https://github.com/tidymodels/tidymodels.org/blob/master/content/start/resampling/index.Rmarkdown#L231)
+
+```
+The other 90% of the data (about 1363 cells) are used to fit the model. Again, this sounds similar to a training set, so in tidymodels we call this data the analysis set. This model, trained on the analysis set, is applied to the assessment set to generate predictions, and performance statistics are computed based on those predictions.
+```        
+
+2. Mention it's possible to add strata to `vfold_cv()`?
+
+3. Maybe it's still worth showing how to unnest metrics to see agreement across folds and visualize? This maybe good for the interactive tutorial.
+
+```{r, eval=FALSE, echo=TRUE}
+rf_fit_rs %>% 
+  select(id, .metrics) %>% 
+  unnest %>%
+  filter(.metric=="accuracy") %>%
+  ggplot(aes(id, .estimate)) +
+  geom_col()
+```
+
+![](/post/2020-05-20-thoughts-on-tidymodels-org-start_files/acc_fold_plot.jpeg){width=80%}     
+
+
+## 4. Hyperparameter Tuning
+
+1. Link somewhere explaining how "these sensible values" in dial were chosen? I couldn't find them in the help file.
+
+
+## 5. Case study
