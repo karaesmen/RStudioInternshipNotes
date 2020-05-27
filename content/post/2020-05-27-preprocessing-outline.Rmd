@@ -1,0 +1,202 @@
+---
+title: Preprocessing outline
+author: Ezgi Karaesmen
+date: '2020-05-27'
+slug: preprocessing-outline
+categories:
+  - primer
+tags:
+  - preprocessing
+  - good practice
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, error = FALSE, warning = FALSE)
+```
+
+Here, I mainly follow Julia Silge's blogpost [PCA and UMAP with tidymodels and #TidyTuesday cocktail recipes](https://juliasilge.com/blog/cocktail-recipes-umap/) and use many of her descriptive sentences. I add them mainly as placeholders for further editing in the future, points I do not want to miss while converting this into a tutorial.
+
+## Introduction
+
+In this article, we’ll explore another tidymodels package, recipes, which is designed to help you preprocess your data before training your model.
+ 
+We'll explore a different part of the tidymodels framework and walk through how to implement principal component analysis via [recipes](https://recipes.tidymodels.org/) with a #TidyTuesday dataset. We will try to understand how certain audio features contirbute to the classification of music genre. 
+
+If you are new to [tidymodels](https://www.tidymodels.org/), visit [get started articles](https://www.tidymodels.org/start/) to familiarize yourself with the concepts. 
+
+
+```{r}
+library(tidymodels)
+library(tidyverse)
+library(lubridate)
+```
+
+
+## The Spotify Data `r emo::ji("musical_note")` from `#TidyTuesday` 
+
+For today's exercise we do not need track/album/artist name or Spotify ID specific columns, so we will remove them. We should transform character columns into factor for modeling. We also extract year from the date column.
+
+```{r}
+spotify_songs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv') %>%
+  mutate(track_album_release_date = as_date(track_album_release_date),
+         track_album_release_year = as.numeric(year(track_album_release_date))
+         ) %>%
+  mutate_if(is.character, as.factor) %>%
+  select(-contains("id"), -contains("name"), -track_artist, -track_album_release_date) %>%
+  drop_na()
+
+glimpse(spotify_songs)
+summary(spotify_songs)
+```
+
+What are the category distributions?
+
+```{r, echo=FALSE, eval=FALSE}
+spotify_songs %>%
+  group_by(playlist_genre, playlist_subgenre) %>%
+  count %>%
+  arrange(playlist_genre, playlist_subgenre) %>%
+  pull(playlist_subgenre)%>% as.character() -> subg_levs
+levels(spotify_songs$playlist_subgenre) <- subg_levs
+
+```
+
+
+```{r}
+spotify_songs %>%
+  ggplot(aes(playlist_genre)) +
+  geom_bar()
+```
+
+Popularity distribution
+
+```{r}
+spotify_songs %>%
+  ggplot(aes(track_popularity)) +
+  geom_histogram()
+
+spotify_songs %>%
+  ggplot(aes(track_album_release_year)) +
+  geom_histogram()
+
+```
+
+How are these audio features correlated with each other?
+
+```{r}
+library(corrr)
+spotify_songs %>%
+  select(-playlist_genre, -playlist_subgenre) %>%
+correlate() %>%
+  rearrange() %>%
+  shave() %>%
+  rplot(shape = 15, colours = c("darkorange", "white", "darkcyan"), print_cor=TRUE) 
+```
+
+## Principle component analysis
+
+```{r}
+pca_rec <- recipe(~., data = spotify_songs) %>%
+  update_role(playlist_genre, playlist_subgenre, track_album_release_year, new_role = "id") %>%
+  step_normalize(all_predictors()) %>%
+  step_pca(all_predictors())
+
+pca_prep <- prep(pca_rec)
+
+pca_prep
+```
+
++ First, we must tell the `recipe()` what’s going on with our model (notice the formula with no outcome) and what data we are using.   
++ Next, we update the role for playlist genre and subgenre since these are variables we want to keep around for convenience as identifiers for rows but are not a predictor or outcome.   
++ We need to center and scale the numeric predictors, because we are about to implement PCA. 
++ Finally, we use `step_pca()` for the actual principal component analysis. 
+
+Before using `prep()` these steps have been defined but not actually run or implemented. The `prep()` function is where everything gets evaluated.
+
+Once we have that done, we can both explore the results of the PCA and the normalization.  We can tidy() any of our recipe steps.
+
+```{r}
+tidy(pca_prep)
+```
+
+There are two objects that can be extracted from our prepped recipe: (1) normalized values, (2) PCA values. We can define the object we would like to extract by providing the `number` associated with it.
+
+```{r}
+tidied_pca <- tidy(pca_prep, 2)
+```
+
+Now let's plot!
+
+```{r}
+tidied_pca %>%
+  filter(component %in% paste0("PC", 1:5)) %>%
+  mutate(component = fct_inorder(component)) %>%
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component, nrow = 1) +
+  labs(y = NULL)
+```
+
+Let's focus on the first four components and reorganize bars so it is easier to detect major contibutors to each PC.
+
+```{r}
+library(tidytext)
+
+tidied_pca %>%
+  filter(component %in% paste0("PC", 1:4)) %>%
+  group_by(component) %>%
+  top_n(8, abs(value)) %>%
+  ungroup() %>%
+  mutate(terms = reorder_within(terms, abs(value), component)) %>%
+  ggplot(aes(abs(value), terms, fill = value > 0)) +
+  geom_col() +
+  facet_wrap(~component, scales = "free_y") +
+  scale_y_reordered() +
+  labs(
+    x = "Absolute value of contribution",
+    y = NULL, fill = "Positive?"
+  )
+```
+
+Two major positive contributors to PC1 are energy and loudness and another negative contributor is acousticness, which is opposite to the other two and makes sense. For PC2, danceability and duration of the track are the main positive and negative contributors respectively. Valence, an indicator of joyfulness of the track and release year are the major contributors for PC3. Finally, actual musical features such as mode and key are the major contributors of PC4.   
+
+How music genres look in the plane of the first two components?
+
+```{r}
+juice(pca_prep) %>% 
+  ggplot(aes(PC1, PC2)) +
+  geom_point(aes(color = playlist_genre), alpha = 0.5, size = 2)
+```
+
+What about PC3 and PC4?
+
+**I can keep the track names to have them as labels in my plot, but they will be too long...** 
+
+There's some separation between EDM and R&B but many songs from different genres seem to overlap. Let's see if separation improves if we switch to UMAP.
+
+## UMAP
+
+One of the benefits of the tidymodels ecosystem is the flexibility and ease of trying different approaches for the same kind of task. For example, we can switch out PCA for [UMAP](https://umap-learn.readthedocs.io/en/latest/how_umap_works.html), an entirely different algorithm for dimensionality reduction based on ideas from topological data analysis. The [embed](https://embed.tidymodels.org/) package provides recipe steps for ways to create embeddings including UMAP. Let's switch out the PCA step for the UMAP step.
+
+
+```{r}
+library(embed)
+
+set.seed(6789)
+umap_rec <- recipe(~., data = spotify_songs) %>%
+  update_role(playlist_genre, playlist_subgenre, new_role = "id") %>%
+  step_normalize(all_predictors()) %>%
+  step_umap(all_predictors())
+
+umap_prep <- prep(umap_rec)
+
+umap_prep
+```
+
+Now juice and plot!
+
+```{r}
+juice(umap_prep) %>%
+  ggplot(aes(umap_1, umap_2)) +
+  geom_point(aes(color = playlist_genre), alpha = 0.7, size = 2)
+```
