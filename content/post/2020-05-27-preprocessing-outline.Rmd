@@ -3,6 +3,9 @@ title: Preprocessing-GP with Spotify Data
 author: Ezgi Karaesmen
 date: '2020-05-27'
 slug: preprocessing-outline
+output: 
+  blogdown::html_page:
+    toc: true
 categories:
   - primer
 tags:

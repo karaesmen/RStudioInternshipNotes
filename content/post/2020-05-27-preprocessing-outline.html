@@ -3,6 +3,9 @@ title: Preprocessing-GP with Spotify Data
 author: Ezgi Karaesmen
 date: '2020-05-27'
 slug: preprocessing-outline
+output: 
+  blogdown::html_page:
+    toc: true
 categories:
   - primer
 tags:
@@ -11,6 +14,15 @@ tags:
 ---
 
 
+<div id="TOC">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#the-spotify-data-from-tidytuesday">The Spotify Data 🎵 from <code>#TidyTuesday</code></a></li>
+<li><a href="#principle-component-analysis">Principle component analysis</a></li>
+<li><a href="#umap">UMAP</a></li>
+<li><a href="#are-songs-classified-in-more-than-one-genre">Are songs classified in more than one genre?</a></li>
+</ul>
+</div>
 
 <p>Here, I mainly follow Julia Silge’s blogpost <a href="https://juliasilge.com/blog/cocktail-recipes-umap/">PCA and UMAP with tidymodels and #TidyTuesday cocktail recipes</a> and use many of her descriptive sentences. I add them mainly as placeholders for further editing in the future, points I do not want to miss while converting this into a tutorial.</p>
 <div id="introduction" class="section level2">
@@ -143,8 +155,8 @@ pca_prep</code></pre>
 <pre><code>## # A tibble: 2 x 6
 ##   number operation type      trained skip  id             
 ##    &lt;int&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;lgl&gt;   &lt;lgl&gt; &lt;chr&gt;          
-## 1      1 step      normalize TRUE    FALSE normalize_zpL1R
-## 2      2 step      pca       TRUE    FALSE pca_Kk1YO</code></pre>
+## 1      1 step      normalize TRUE    FALSE normalize_RNUNP
+## 2      2 step      pca       TRUE    FALSE pca_Wwl7y</code></pre>
 <p>There are two objects that can be extracted from our prepped recipe: (1) normalized values, (2) PCA values. We can define the object we would like to extract by providing the <code>number</code> associated with it.</p>
 <pre class="r"><code>tidied_pca &lt;- tidy(pca_prep, 2)</code></pre>
 <p>Now let’s plot!</p>
