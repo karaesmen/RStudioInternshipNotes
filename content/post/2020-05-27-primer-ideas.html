@@ -1,0 +1,152 @@
+---
+title: Primer Dataset Ideas
+author: Ezgi Karaesmen
+date: '2020-05-27'
+slug: primer-ideas
+output: 
+  blogdown::html_page:
+    toc: true
+categories: [primer]
+tags:
+  - interactive primers
+  - datasets
+---
+
+
+<div id="TOC">
+<ul>
+<li><a href="#build-a-model">1. Build a Model</a><ul>
+<li><a href="#good-practice">Good practice</a><ul>
+<li><a href="#outcome-numeric">1. Outcome: numeric</a></li>
+<li><a href="#outcome-binary">1. Outcome: binary</a></li>
+<li><a href="#outcome-categorical">1. Outcome: categorical</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#preprocessing">1. Preprocessing</a><ul>
+<li><a href="#good-practice-1">Good practice</a><ul>
+<li><a href="#working-with-pca">Working with PCA</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
+
+<div id="build-a-model" class="section level1">
+<h1>1. Build a Model</h1>
+<div id="good-practice" class="section level2">
+<h2>Good practice</h2>
+<div id="outcome-numeric" class="section level3">
+<h3>1. Outcome: numeric</h3>
+<p>Sad truth about professor salaries from <code>carData</code>. <a href="https://vincentarelbundock.github.io/Rdatasets/doc/carData/Salaries.html">See doc</a></p>
+<pre class="r"><code>salaries &lt;- read_csv(&quot;https://vincentarelbundock.github.io/Rdatasets/csv/carData/Salaries.csv&quot;)
+glimpse(salaries)</code></pre>
+<pre><code>## Rows: 397
+## Columns: 7
+## $ X1            &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, …
+## $ rank          &lt;chr&gt; &quot;Prof&quot;, &quot;Prof&quot;, &quot;AsstProf&quot;, &quot;Prof&quot;, &quot;Prof&quot;, &quot;AssocProf&quot;…
+## $ discipline    &lt;chr&gt; &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, …
+## $ yrs.since.phd &lt;dbl&gt; 19, 20, 4, 45, 40, 6, 30, 45, 21, 18, 12, 7, 1, 2, 20, …
+## $ yrs.service   &lt;dbl&gt; 18, 16, 3, 39, 41, 6, 23, 45, 20, 18, 8, 2, 1, 0, 18, 3…
+## $ sex           &lt;chr&gt; &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;, &quot;Male&quot;,…
+## $ salary        &lt;dbl&gt; 139750, 173200, 79750, 115000, 141500, 97000, 175000, 1…</code></pre>
+</div>
+<div id="outcome-binary" class="section level3">
+<h3>1. Outcome: binary</h3>
+<p>Esophagial cancer</p>
+<pre class="r"><code>glimpse(esoph)</code></pre>
+<pre><code>## Rows: 88
+## Columns: 5
+## $ agegp     &lt;ord&gt; 25-34, 25-34, 25-34, 25-34, 25-34, 25-34, 25-34, 25-34, 25-…
+## $ alcgp     &lt;ord&gt; 0-39g/day, 0-39g/day, 0-39g/day, 0-39g/day, 40-79, 40-79, 4…
+## $ tobgp     &lt;ord&gt; 0-9g/day, 10-19, 20-29, 30+, 0-9g/day, 10-19, 20-29, 30+, 0…
+## $ ncases    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0,…
+## $ ncontrols &lt;dbl&gt; 40, 10, 6, 5, 27, 7, 4, 7, 2, 1, 2, 1, 1, 1, 2, 60, 14, 7, …</code></pre>
+<p>either expand the dataset to reflect individual observations or work with case/control probabilities?
+e.g. a tidymodels version of</p>
+<pre class="r"><code>model1 &lt;- glm(cbind(ncases, ncontrols) ~ agegp + tobgp * alcgp,
+              data = esoph, family = binomial())
+anova(model1)</code></pre>
+</div>
+<div id="outcome-categorical" class="section level3">
+<h3>1. Outcome: categorical</h3>
+<p>Is there a dataset with SAT scores and career choices?</p>
+<p>Some other suggestions:</p>
+<p>Canadian Women’s Labour-Force Participation <a href="https://vincentarelbundock.github.io/Rdatasets/doc/carData/Womenlf.html">See doc.</a></p>
+<pre class="r"><code>wforce &lt;- read_csv(&quot;https://vincentarelbundock.github.io/Rdatasets/csv/carData/Womenlf.csv&quot;)
+glimpse(wforce)</code></pre>
+<pre><code>## Rows: 263
+## Columns: 5
+## $ X1       &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 1…
+## $ partic   &lt;chr&gt; &quot;not.work&quot;, &quot;not.work&quot;, &quot;not.work&quot;, &quot;not.work&quot;, &quot;not.work&quot;, …
+## $ hincome  &lt;dbl&gt; 15, 13, 45, 23, 19, 7, 15, 7, 15, 23, 23, 13, 9, 9, 45, 15, …
+## $ children &lt;chr&gt; &quot;present&quot;, &quot;present&quot;, &quot;present&quot;, &quot;present&quot;, &quot;present&quot;, &quot;pres…
+## $ region   &lt;chr&gt; &quot;Ontario&quot;, &quot;Ontario&quot;, &quot;Ontario&quot;, &quot;Ontario&quot;, &quot;Ontario&quot;, &quot;Onta…</code></pre>
+<pre class="r"><code>wforce %&gt;% 
+  group_by(partic, children) %&gt;%
+  count()</code></pre>
+<pre><code>## # A tibble: 6 x 3
+## # Groups:   partic, children [6]
+##   partic   children     n
+##   &lt;chr&gt;    &lt;chr&gt;    &lt;int&gt;
+## 1 fulltime absent      46
+## 2 fulltime present     20
+## 3 not.work absent      26
+## 4 not.work present    129
+## 5 parttime absent       7
+## 6 parttime present     35</code></pre>
+<p>Pottery: Chemical composition of ancient pottery found at four sites in Great Britain. [See doc.]</p>
+<pre class="r"><code>pott &lt;- read_csv(&quot;https://vincentarelbundock.github.io/Rdatasets/csv/carData/Pottery.csv&quot;)
+glimpse(pott)</code></pre>
+<pre><code>## Rows: 26
+## Columns: 7
+## $ X1   &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 1…
+## $ Site &lt;chr&gt; &quot;Llanedyrn&quot;, &quot;Llanedyrn&quot;, &quot;Llanedyrn&quot;, &quot;Llanedyrn&quot;, &quot;Llanedyrn&quot;,…
+## $ Al   &lt;dbl&gt; 14.4, 13.8, 14.6, 11.5, 13.8, 10.9, 10.1, 11.6, 11.1, 13.4, 12.4…
+## $ Fe   &lt;dbl&gt; 7.00, 7.08, 7.09, 6.37, 7.06, 6.26, 4.26, 5.78, 5.49, 6.92, 6.13…
+## $ Mg   &lt;dbl&gt; 4.30, 3.43, 3.88, 5.64, 5.34, 3.47, 4.26, 5.91, 4.52, 7.23, 5.69…
+## $ Ca   &lt;dbl&gt; 0.15, 0.12, 0.13, 0.16, 0.20, 0.17, 0.20, 0.18, 0.29, 0.28, 0.22…
+## $ Na   &lt;dbl&gt; 0.51, 0.17, 0.20, 0.14, 0.20, 0.22, 0.18, 0.16, 0.30, 0.20, 0.54…</code></pre>
+</div>
+</div>
+</div>
+<div id="preprocessing" class="section level1">
+<h1>1. Preprocessing</h1>
+<div id="good-practice-1" class="section level2">
+<h2>Good practice</h2>
+<div id="working-with-pca" class="section level3">
+<h3>Working with PCA</h3>
+<pre class="r"><code>spotify_songs &lt;- readr::read_csv(&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv&#39;)
+table(spotify_songs$playlist_genre)</code></pre>
+<pre><code>## 
+##   edm latin   pop   r&amp;b   rap  rock 
+##  6043  5155  5507  5431  5746  4951</code></pre>
+<pre class="r"><code>hist(spotify_songs$track_popularity)</code></pre>
+<p><img src="/post/2020-05-27-primer-ideas_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>glimpse(spotify_songs)</code></pre>
+<pre><code>## Rows: 32,833
+## Columns: 23
+## $ track_id                 &lt;chr&gt; &quot;6f807x0ima9a1j3VPbc7VN&quot;, &quot;0r7CVbZTWZgbTCYdf…
+## $ track_name               &lt;chr&gt; &quot;I Don&#39;t Care (with Justin Bieber) - Loud Lu…
+## $ track_artist             &lt;chr&gt; &quot;Ed Sheeran&quot;, &quot;Maroon 5&quot;, &quot;Zara Larsson&quot;, &quot;T…
+## $ track_popularity         &lt;dbl&gt; 66, 67, 70, 60, 69, 67, 62, 69, 68, 67, 58, …
+## $ track_album_id           &lt;chr&gt; &quot;2oCs0DGTsRO98Gh5ZSl2Cx&quot;, &quot;63rPSO264uRjW1X5E…
+## $ track_album_name         &lt;chr&gt; &quot;I Don&#39;t Care (with Justin Bieber) [Loud Lux…
+## $ track_album_release_date &lt;chr&gt; &quot;2019-06-14&quot;, &quot;2019-12-13&quot;, &quot;2019-07-05&quot;, &quot;2…
+## $ playlist_name            &lt;chr&gt; &quot;Pop Remix&quot;, &quot;Pop Remix&quot;, &quot;Pop Remix&quot;, &quot;Pop …
+## $ playlist_id              &lt;chr&gt; &quot;37i9dQZF1DXcZDD7cfEKhW&quot;, &quot;37i9dQZF1DXcZDD7c…
+## $ playlist_genre           &lt;chr&gt; &quot;pop&quot;, &quot;pop&quot;, &quot;pop&quot;, &quot;pop&quot;, &quot;pop&quot;, &quot;pop&quot;, &quot;p…
+## $ playlist_subgenre        &lt;chr&gt; &quot;dance pop&quot;, &quot;dance pop&quot;, &quot;dance pop&quot;, &quot;danc…
+## $ danceability             &lt;dbl&gt; 0.748, 0.726, 0.675, 0.718, 0.650, 0.675, 0.…
+## $ energy                   &lt;dbl&gt; 0.916, 0.815, 0.931, 0.930, 0.833, 0.919, 0.…
+## $ key                      &lt;dbl&gt; 6, 11, 1, 7, 1, 8, 5, 4, 8, 2, 6, 8, 1, 5, 5…
+## $ loudness                 &lt;dbl&gt; -2.634, -4.969, -3.432, -3.778, -4.672, -5.3…
+## $ mode                     &lt;dbl&gt; 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0,…
+## $ speechiness              &lt;dbl&gt; 0.0583, 0.0373, 0.0742, 0.1020, 0.0359, 0.12…
+## $ acousticness             &lt;dbl&gt; 0.10200, 0.07240, 0.07940, 0.02870, 0.08030,…
+## $ instrumentalness         &lt;dbl&gt; 0.00e+00, 4.21e-03, 2.33e-05, 9.43e-06, 0.00…
+## $ liveness                 &lt;dbl&gt; 0.0653, 0.3570, 0.1100, 0.2040, 0.0833, 0.14…
+## $ valence                  &lt;dbl&gt; 0.518, 0.693, 0.613, 0.277, 0.725, 0.585, 0.…
+## $ tempo                    &lt;dbl&gt; 122.036, 99.972, 124.008, 121.956, 123.976, …
+## $ duration_ms              &lt;dbl&gt; 194754, 162600, 176616, 169093, 189052, 1630…</code></pre>
+</div>
+</div>
+</div>

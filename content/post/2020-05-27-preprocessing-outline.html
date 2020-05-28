@@ -1,0 +1,232 @@
+---
+title: Preprocessing outline
+author: Ezgi Karaesmen
+date: '2020-05-27'
+slug: preprocessing-outline
+categories:
+  - primer
+tags:
+  - preprocessing
+  - good practice
+---
+
+
+
+<p>Here, I mainly follow Julia Silge’s blogpost <a href="https://juliasilge.com/blog/cocktail-recipes-umap/">PCA and UMAP with tidymodels and #TidyTuesday cocktail recipes</a> and use many of her descriptive sentences. I add them mainly as placeholders for further editing in the future, points I do not want to miss while converting this into a tutorial.</p>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>In this article, we’ll explore another tidymodels package, recipes, which is designed to help you preprocess your data before training your model.</p>
+<p>We’ll explore a different part of the tidymodels framework and walk through how to implement principal component analysis via <a href="https://recipes.tidymodels.org/">recipes</a> with a #TidyTuesday dataset. We will try to understand how certain audio features contirbute to the classification of music genre.</p>
+<p>If you are new to <a href="https://www.tidymodels.org/">tidymodels</a>, visit <a href="https://www.tidymodels.org/start/">get started articles</a> to familiarize yourself with the concepts.</p>
+<pre class="r"><code>library(tidymodels)
+library(tidyverse)
+library(lubridate)</code></pre>
+</div>
+<div id="the-spotify-data-from-tidytuesday" class="section level2">
+<h2>The Spotify Data 🎵 from <code>#TidyTuesday</code></h2>
+<p>For today’s exercise we do not need track/album/artist name or Spotify ID specific columns, so we will remove them. We should transform character columns into factor for modeling. We also extract year from the date column.</p>
+<pre class="r"><code>spotify_songs &lt;- readr::read_csv(&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv&#39;) %&gt;%
+  mutate(track_album_release_date = as_date(track_album_release_date),
+         track_album_release_year = as.numeric(year(track_album_release_date))
+         ) %&gt;%
+  mutate_if(is.character, as.factor) %&gt;%
+  select(-contains(&quot;id&quot;), -contains(&quot;name&quot;), -track_artist, -track_album_release_date) %&gt;%
+  drop_na()
+
+glimpse(spotify_songs)</code></pre>
+<pre><code>## Rows: 30,947
+## Columns: 16
+## $ track_popularity         &lt;dbl&gt; 66, 67, 70, 60, 69, 67, 62, 69, 68, 67, 58, …
+## $ playlist_genre           &lt;fct&gt; pop, pop, pop, pop, pop, pop, pop, pop, pop,…
+## $ playlist_subgenre        &lt;fct&gt; dance pop, dance pop, dance pop, dance pop, …
+## $ danceability             &lt;dbl&gt; 0.748, 0.726, 0.675, 0.718, 0.650, 0.675, 0.…
+## $ energy                   &lt;dbl&gt; 0.916, 0.815, 0.931, 0.930, 0.833, 0.919, 0.…
+## $ key                      &lt;dbl&gt; 6, 11, 1, 7, 1, 8, 5, 4, 8, 2, 6, 8, 1, 5, 5…
+## $ loudness                 &lt;dbl&gt; -2.634, -4.969, -3.432, -3.778, -4.672, -5.3…
+## $ mode                     &lt;dbl&gt; 1, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0,…
+## $ speechiness              &lt;dbl&gt; 0.0583, 0.0373, 0.0742, 0.1020, 0.0359, 0.12…
+## $ acousticness             &lt;dbl&gt; 0.10200, 0.07240, 0.07940, 0.02870, 0.08030,…
+## $ instrumentalness         &lt;dbl&gt; 0.00e+00, 4.21e-03, 2.33e-05, 9.43e-06, 0.00…
+## $ liveness                 &lt;dbl&gt; 0.0653, 0.3570, 0.1100, 0.2040, 0.0833, 0.14…
+## $ valence                  &lt;dbl&gt; 0.518, 0.693, 0.613, 0.277, 0.725, 0.585, 0.…
+## $ tempo                    &lt;dbl&gt; 122.036, 99.972, 124.008, 121.956, 123.976, …
+## $ duration_ms              &lt;dbl&gt; 194754, 162600, 176616, 169093, 189052, 1630…
+## $ track_album_release_year &lt;dbl&gt; 2019, 2019, 2019, 2019, 2019, 2019, 2019, 20…</code></pre>
+<pre class="r"><code>summary(spotify_songs)</code></pre>
+<pre><code>##  track_popularity playlist_genre                 playlist_subgenre
+##  Min.   :  0.00   edm  :5969     progressive electro house: 1760  
+##  1st Qu.: 25.00   latin:4963     indie poptimism          : 1647  
+##  Median : 45.00   pop  :5303     latin hip hop            : 1573  
+##  Mean   : 42.75   r&amp;b  :5094     neo soul                 : 1547  
+##  3rd Qu.: 62.00   rap  :5471     southern hip hop         : 1513  
+##  Max.   :100.00   rock :4147     pop edm                  : 1507  
+##                                  (Other)                  :21400  
+##   danceability        energy              key            loudness      
+##  Min.   :0.0000   Min.   :0.000175   Min.   : 0.000   Min.   :-46.448  
+##  1st Qu.:0.5660   1st Qu.:0.582000   1st Qu.: 2.000   1st Qu.: -8.073  
+##  Median :0.6740   Median :0.721000   Median : 6.000   Median : -6.093  
+##  Mean   :0.6573   Mean   :0.698875   Mean   : 5.369   Mean   : -6.639  
+##  3rd Qu.:0.7620   3rd Qu.:0.840000   3rd Qu.: 9.000   3rd Qu.: -4.606  
+##  Max.   :0.9830   Max.   :1.000000   Max.   :11.000   Max.   :  1.275  
+##                                                                        
+##       mode         speechiness      acousticness    instrumentalness   
+##  Min.   :0.0000   Min.   :0.0000   Min.   :0.0000   Min.   :0.0000000  
+##  1st Qu.:0.0000   1st Qu.:0.0415   1st Qu.:0.0152   1st Qu.:0.0000000  
+##  Median :1.0000   Median :0.0636   Median :0.0810   Median :0.0000153  
+##  Mean   :0.5609   Mean   :0.1082   Mean   :0.1759   Mean   :0.0869421  
+##  3rd Qu.:1.0000   3rd Qu.:0.1340   3rd Qu.:0.2560   3rd Qu.:0.0050600  
+##  Max.   :1.0000   Max.   :0.9180   Max.   :0.9940   Max.   :0.9940000  
+##                                                                        
+##     liveness         valence          tempo         duration_ms    
+##  Min.   :0.0000   Min.   :0.000   Min.   :  0.00   Min.   :  4000  
+##  1st Qu.:0.0931   1st Qu.:0.326   1st Qu.: 99.97   1st Qu.:186750  
+##  Median :0.1270   Median :0.506   Median :122.00   Median :214400  
+##  Mean   :0.1900   Mean   :0.505   Mean   :120.94   Mean   :223950  
+##  3rd Qu.:0.2470   3rd Qu.:0.687   3rd Qu.:133.52   3rd Qu.:251133  
+##  Max.   :0.9960   Max.   :0.991   Max.   :239.44   Max.   :517810  
+##                                                                    
+##  track_album_release_year
+##  Min.   :1957            
+##  1st Qu.:2010            
+##  Median :2017            
+##  Mean   :2012            
+##  3rd Qu.:2019            
+##  Max.   :2020            
+## </code></pre>
+<p>What are the category distributions?</p>
+<pre class="r"><code>spotify_songs %&gt;%
+  ggplot(aes(playlist_genre)) +
+  geom_bar()</code></pre>
+<p><img src="/post/2020-05-27-preprocessing-outline_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>Popularity distribution</p>
+<pre class="r"><code>spotify_songs %&gt;%
+  ggplot(aes(track_popularity)) +
+  geom_histogram()</code></pre>
+<p><img src="/post/2020-05-27-preprocessing-outline_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>spotify_songs %&gt;%
+  ggplot(aes(track_album_release_year)) +
+  geom_histogram()</code></pre>
+<p><img src="/post/2020-05-27-preprocessing-outline_files/figure-html/unnamed-chunk-5-2.png" width="672" /></p>
+<p>How are these audio features correlated with each other?</p>
+<pre class="r"><code>library(corrr)
+spotify_songs %&gt;%
+  select(-playlist_genre, -playlist_subgenre) %&gt;%
+correlate() %&gt;%
+  rearrange() %&gt;%
+  shave() %&gt;%
+  rplot(shape = 15, colours = c(&quot;darkorange&quot;, &quot;white&quot;, &quot;darkcyan&quot;), print_cor=TRUE) </code></pre>
+<p><img src="/post/2020-05-27-preprocessing-outline_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+</div>
+<div id="principle-component-analysis" class="section level2">
+<h2>Principle component analysis</h2>
+<pre class="r"><code>pca_rec &lt;- recipe(~., data = spotify_songs) %&gt;%
+  update_role(playlist_genre, playlist_subgenre, track_album_release_year, new_role = &quot;id&quot;) %&gt;%
+  step_normalize(all_predictors()) %&gt;%
+  step_pca(all_predictors())
+
+pca_prep &lt;- prep(pca_rec)
+
+pca_prep</code></pre>
+<pre><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##         id          3
+##  predictor         13
+## 
+## Training data contained 30947 data points and no missing data.
+## 
+## Operations:
+## 
+## Centering and scaling for track_popularity, danceability, energy, ... [trained]
+## PCA extraction with track_popularity, danceability, energy, ... [trained]</code></pre>
+<ul>
+<li>First, we must tell the <code>recipe()</code> what’s going on with our model (notice the formula with no outcome) and what data we are using.<br />
+</li>
+<li>Next, we update the role for playlist genre and subgenre since these are variables we want to keep around for convenience as identifiers for rows but are not a predictor or outcome.<br />
+</li>
+<li>We need to center and scale the numeric predictors, because we are about to implement PCA.</li>
+<li>Finally, we use <code>step_pca()</code> for the actual principal component analysis.</li>
+</ul>
+<p>Before using <code>prep()</code> these steps have been defined but not actually run or implemented. The <code>prep()</code> function is where everything gets evaluated.</p>
+<p>Once we have that done, we can both explore the results of the PCA and the normalization. We can tidy() any of our recipe steps.</p>
+<pre class="r"><code>tidy(pca_prep)</code></pre>
+<pre><code>## # A tibble: 2 x 6
+##   number operation type      trained skip  id             
+##    &lt;int&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;lgl&gt;   &lt;lgl&gt; &lt;chr&gt;          
+## 1      1 step      normalize TRUE    FALSE normalize_Pun0S
+## 2      2 step      pca       TRUE    FALSE pca_eOc5y</code></pre>
+<p>There are two objects that can be extracted from our prepped recipe: (1) normalized values, (2) PCA values. We can define the object we would like to extract by providing the <code>number</code> associated with it.</p>
+<pre class="r"><code>tidied_pca &lt;- tidy(pca_prep, 2)</code></pre>
+<p>Now let’s plot!</p>
+<pre class="r"><code>tidied_pca %&gt;%
+  filter(component %in% paste0(&quot;PC&quot;, 1:5)) %&gt;%
+  mutate(component = fct_inorder(component)) %&gt;%
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component, nrow = 1) +
+  labs(y = NULL)</code></pre>
+<p><img src="/post/2020-05-27-preprocessing-outline_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>Let’s focus on the first four components and reorganize bars so it is easier to detect major contibutors to each PC.</p>
+<pre class="r"><code>library(tidytext)
+
+tidied_pca %&gt;%
+  filter(component %in% paste0(&quot;PC&quot;, 1:4)) %&gt;%
+  group_by(component) %&gt;%
+  top_n(8, abs(value)) %&gt;%
+  ungroup() %&gt;%
+  mutate(terms = reorder_within(terms, abs(value), component)) %&gt;%
+  ggplot(aes(abs(value), terms, fill = value &gt; 0)) +
+  geom_col() +
+  facet_wrap(~component, scales = &quot;free_y&quot;) +
+  scale_y_reordered() +
+  labs(
+    x = &quot;Absolute value of contribution&quot;,
+    y = NULL, fill = &quot;Positive?&quot;
+  )</code></pre>
+<p><img src="/post/2020-05-27-preprocessing-outline_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>Two major positive contributors to PC1 are energy and loudness and another negative contributor is acousticness, which is opposite to the other two and makes sense. For PC2, danceability and duration of the track are the main positive and negative contributors respectively. Valence, an indicator of joyfulness of the track and release year are the major contributors for PC3. Finally, actual musical features such as mode and key are the major contributors of PC4.</p>
+<p>How music genres look in the plane of the first two components?</p>
+<pre class="r"><code>juice(pca_prep) %&gt;% 
+  ggplot(aes(PC1, PC2)) +
+  geom_point(aes(color = playlist_genre), alpha = 0.5, size = 2)</code></pre>
+<p><img src="/post/2020-05-27-preprocessing-outline_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p>What about PC3 and PC4?</p>
+<p><strong>I can keep the track names to have them as labels in my plot, but they will be too long…</strong></p>
+<p>There’s some separation between EDM and R&amp;B but many songs from different genres seem to overlap. Let’s see if separation improves if we switch to UMAP.</p>
+</div>
+<div id="umap" class="section level2">
+<h2>UMAP</h2>
+<p>One of the benefits of the tidymodels ecosystem is the flexibility and ease of trying different approaches for the same kind of task. For example, we can switch out PCA for <a href="https://umap-learn.readthedocs.io/en/latest/how_umap_works.html">UMAP</a>, an entirely different algorithm for dimensionality reduction based on ideas from topological data analysis. The <a href="https://embed.tidymodels.org/">embed</a> package provides recipe steps for ways to create embeddings including UMAP. Let’s switch out the PCA step for the UMAP step.</p>
+<pre class="r"><code>library(embed)
+
+set.seed(6789)
+umap_rec &lt;- recipe(~., data = spotify_songs) %&gt;%
+  update_role(playlist_genre, playlist_subgenre, new_role = &quot;id&quot;) %&gt;%
+  step_normalize(all_predictors()) %&gt;%
+  step_umap(all_predictors())
+
+umap_prep &lt;- prep(umap_rec)
+
+umap_prep</code></pre>
+<pre><code>## Data Recipe
+## 
+## Inputs:
+## 
+##       role #variables
+##         id          2
+##  predictor         14
+## 
+## Training data contained 30947 data points and no missing data.
+## 
+## Operations:
+## 
+## Centering and scaling for track_popularity, danceability, energy, ... [trained]
+## UMAP embedding for track_popularity, danceability, energy, ... [trained]</code></pre>
+<p>Now juice and plot!</p>
+<pre class="r"><code>juice(umap_prep) %&gt;%
+  ggplot(aes(umap_1, umap_2)) +
+  geom_point(aes(color = playlist_genre), alpha = 0.7, size = 2)</code></pre>
+<p><img src="/post/2020-05-27-preprocessing-outline_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+</div>
