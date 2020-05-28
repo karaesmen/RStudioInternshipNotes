@@ -1,5 +1,5 @@
 ---
-title: Preprocessing outline
+title: Preprocessing-GP with Spotify Data
 author: Ezgi Karaesmen
 date: '2020-05-27'
 slug: preprocessing-outline
@@ -24,12 +24,12 @@ library(lubridate)</code></pre>
 </div>
 <div id="the-spotify-data-from-tidytuesday" class="section level2">
 <h2>The Spotify Data 🎵 from <code>#TidyTuesday</code></h2>
-<p>For today’s exercise we do not need track/album/artist name or Spotify ID specific columns, so we will remove them. We should transform character columns into factor for modeling. We also extract year from the date column.</p>
-<pre class="r"><code>spotify_songs &lt;- readr::read_csv(&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv&#39;) %&gt;%
+<p>For today’s exercise we do not need track/album/artist name or Spotify ID specific columns, so we will remove them. We also extract release year from the date column.</p>
+<pre class="r"><code>spotify_songs0 &lt;- readr::read_csv(&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv&#39;) 
+spotify_songs &lt;- spotify_songs0 %&gt;%
   mutate(track_album_release_date = as_date(track_album_release_date),
          track_album_release_year = as.numeric(year(track_album_release_date))
          ) %&gt;%
-  mutate_if(is.character, as.factor) %&gt;%
   select(-contains(&quot;id&quot;), -contains(&quot;name&quot;), -track_artist, -track_album_release_date) %&gt;%
   drop_na()
 
@@ -37,8 +37,8 @@ glimpse(spotify_songs)</code></pre>
 <pre><code>## Rows: 30,947
 ## Columns: 16
 ## $ track_popularity         &lt;dbl&gt; 66, 67, 70, 60, 69, 67, 62, 69, 68, 67, 58, …
-## $ playlist_genre           &lt;fct&gt; pop, pop, pop, pop, pop, pop, pop, pop, pop,…
-## $ playlist_subgenre        &lt;fct&gt; dance pop, dance pop, dance pop, dance pop, …
+## $ playlist_genre           &lt;chr&gt; &quot;pop&quot;, &quot;pop&quot;, &quot;pop&quot;, &quot;pop&quot;, &quot;pop&quot;, &quot;pop&quot;, &quot;p…
+## $ playlist_subgenre        &lt;chr&gt; &quot;dance pop&quot;, &quot;dance pop&quot;, &quot;dance pop&quot;, &quot;danc…
 ## $ danceability             &lt;dbl&gt; 0.748, 0.726, 0.675, 0.718, 0.650, 0.675, 0.…
 ## $ energy                   &lt;dbl&gt; 0.916, 0.815, 0.931, 0.930, 0.833, 0.919, 0.…
 ## $ key                      &lt;dbl&gt; 6, 11, 1, 7, 1, 8, 5, 4, 8, 2, 6, 8, 1, 5, 5…
@@ -53,46 +53,34 @@ glimpse(spotify_songs)</code></pre>
 ## $ duration_ms              &lt;dbl&gt; 194754, 162600, 176616, 169093, 189052, 1630…
 ## $ track_album_release_year &lt;dbl&gt; 2019, 2019, 2019, 2019, 2019, 2019, 2019, 20…</code></pre>
 <pre class="r"><code>summary(spotify_songs)</code></pre>
-<pre><code>##  track_popularity playlist_genre                 playlist_subgenre
-##  Min.   :  0.00   edm  :5969     progressive electro house: 1760  
-##  1st Qu.: 25.00   latin:4963     indie poptimism          : 1647  
-##  Median : 45.00   pop  :5303     latin hip hop            : 1573  
-##  Mean   : 42.75   r&amp;b  :5094     neo soul                 : 1547  
-##  3rd Qu.: 62.00   rap  :5471     southern hip hop         : 1513  
-##  Max.   :100.00   rock :4147     pop edm                  : 1507  
-##                                  (Other)                  :21400  
-##   danceability        energy              key            loudness      
-##  Min.   :0.0000   Min.   :0.000175   Min.   : 0.000   Min.   :-46.448  
-##  1st Qu.:0.5660   1st Qu.:0.582000   1st Qu.: 2.000   1st Qu.: -8.073  
-##  Median :0.6740   Median :0.721000   Median : 6.000   Median : -6.093  
-##  Mean   :0.6573   Mean   :0.698875   Mean   : 5.369   Mean   : -6.639  
-##  3rd Qu.:0.7620   3rd Qu.:0.840000   3rd Qu.: 9.000   3rd Qu.: -4.606  
-##  Max.   :0.9830   Max.   :1.000000   Max.   :11.000   Max.   :  1.275  
-##                                                                        
-##       mode         speechiness      acousticness    instrumentalness   
-##  Min.   :0.0000   Min.   :0.0000   Min.   :0.0000   Min.   :0.0000000  
-##  1st Qu.:0.0000   1st Qu.:0.0415   1st Qu.:0.0152   1st Qu.:0.0000000  
-##  Median :1.0000   Median :0.0636   Median :0.0810   Median :0.0000153  
-##  Mean   :0.5609   Mean   :0.1082   Mean   :0.1759   Mean   :0.0869421  
-##  3rd Qu.:1.0000   3rd Qu.:0.1340   3rd Qu.:0.2560   3rd Qu.:0.0050600  
-##  Max.   :1.0000   Max.   :0.9180   Max.   :0.9940   Max.   :0.9940000  
-##                                                                        
-##     liveness         valence          tempo         duration_ms    
-##  Min.   :0.0000   Min.   :0.000   Min.   :  0.00   Min.   :  4000  
-##  1st Qu.:0.0931   1st Qu.:0.326   1st Qu.: 99.97   1st Qu.:186750  
-##  Median :0.1270   Median :0.506   Median :122.00   Median :214400  
-##  Mean   :0.1900   Mean   :0.505   Mean   :120.94   Mean   :223950  
-##  3rd Qu.:0.2470   3rd Qu.:0.687   3rd Qu.:133.52   3rd Qu.:251133  
-##  Max.   :0.9960   Max.   :0.991   Max.   :239.44   Max.   :517810  
-##                                                                    
-##  track_album_release_year
-##  Min.   :1957            
-##  1st Qu.:2010            
-##  Median :2017            
-##  Mean   :2012            
-##  3rd Qu.:2019            
-##  Max.   :2020            
-## </code></pre>
+<pre><code>##  track_popularity playlist_genre     playlist_subgenre   danceability   
+##  Min.   :  0.00   Length:30947       Length:30947       Min.   :0.0000  
+##  1st Qu.: 25.00   Class :character   Class :character   1st Qu.:0.5660  
+##  Median : 45.00   Mode  :character   Mode  :character   Median :0.6740  
+##  Mean   : 42.75                                         Mean   :0.6573  
+##  3rd Qu.: 62.00                                         3rd Qu.:0.7620  
+##  Max.   :100.00                                         Max.   :0.9830  
+##      energy              key            loudness            mode       
+##  Min.   :0.000175   Min.   : 0.000   Min.   :-46.448   Min.   :0.0000  
+##  1st Qu.:0.582000   1st Qu.: 2.000   1st Qu.: -8.073   1st Qu.:0.0000  
+##  Median :0.721000   Median : 6.000   Median : -6.093   Median :1.0000  
+##  Mean   :0.698875   Mean   : 5.369   Mean   : -6.639   Mean   :0.5609  
+##  3rd Qu.:0.840000   3rd Qu.: 9.000   3rd Qu.: -4.606   3rd Qu.:1.0000  
+##  Max.   :1.000000   Max.   :11.000   Max.   :  1.275   Max.   :1.0000  
+##   speechiness      acousticness    instrumentalness       liveness     
+##  Min.   :0.0000   Min.   :0.0000   Min.   :0.0000000   Min.   :0.0000  
+##  1st Qu.:0.0415   1st Qu.:0.0152   1st Qu.:0.0000000   1st Qu.:0.0931  
+##  Median :0.0636   Median :0.0810   Median :0.0000153   Median :0.1270  
+##  Mean   :0.1082   Mean   :0.1759   Mean   :0.0869421   Mean   :0.1900  
+##  3rd Qu.:0.1340   3rd Qu.:0.2560   3rd Qu.:0.0050600   3rd Qu.:0.2470  
+##  Max.   :0.9180   Max.   :0.9940   Max.   :0.9940000   Max.   :0.9960  
+##     valence          tempo         duration_ms     track_album_release_year
+##  Min.   :0.000   Min.   :  0.00   Min.   :  4000   Min.   :1957            
+##  1st Qu.:0.326   1st Qu.: 99.97   1st Qu.:186750   1st Qu.:2010            
+##  Median :0.506   Median :122.00   Median :214400   Median :2017            
+##  Mean   :0.505   Mean   :120.94   Mean   :223950   Mean   :2012            
+##  3rd Qu.:0.687   3rd Qu.:133.52   3rd Qu.:251133   3rd Qu.:2019            
+##  Max.   :0.991   Max.   :239.44   Max.   :517810   Max.   :2020</code></pre>
 <p>What are the category distributions?</p>
 <pre class="r"><code>spotify_songs %&gt;%
   ggplot(aes(playlist_genre)) +
@@ -155,8 +143,8 @@ pca_prep</code></pre>
 <pre><code>## # A tibble: 2 x 6
 ##   number operation type      trained skip  id             
 ##    &lt;int&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;lgl&gt;   &lt;lgl&gt; &lt;chr&gt;          
-## 1      1 step      normalize TRUE    FALSE normalize_Pun0S
-## 2      2 step      pca       TRUE    FALSE pca_eOc5y</code></pre>
+## 1      1 step      normalize TRUE    FALSE normalize_zpL1R
+## 2      2 step      pca       TRUE    FALSE pca_Kk1YO</code></pre>
 <p>There are two objects that can be extracted from our prepped recipe: (1) normalized values, (2) PCA values. We can define the object we would like to extract by providing the <code>number</code> associated with it.</p>
 <pre class="r"><code>tidied_pca &lt;- tidy(pca_prep, 2)</code></pre>
 <p>Now let’s plot!</p>
@@ -229,4 +217,18 @@ umap_prep</code></pre>
   ggplot(aes(umap_1, umap_2)) +
   geom_point(aes(color = playlist_genre), alpha = 0.7, size = 2)</code></pre>
 <p><img src="/post/2020-05-27-preprocessing-outline_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+</div>
+<div id="are-songs-classified-in-more-than-one-genre" class="section level2">
+<h2>Are songs classified in more than one genre?</h2>
+<pre class="r"><code>library(UpSetR)
+
+spotify_songs0 %&gt;% 
+  group_by(track_id, playlist_genre) %&gt;%
+  count() %&gt;% 
+  ungroup() %&gt;% 
+  mutate(n=ifelse(n&gt;0, 1, 0)) %&gt;% 
+  spread(playlist_genre, n, fill = 0) %&gt;%
+  mutate_if(is.numeric, as.integer) -&gt; upset_dat
+  upset(as.data.frame(upset_dat), nsets = 6)</code></pre>
+<p><img src="/post/2020-05-27-preprocessing-outline_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
 </div>

@@ -1,5 +1,5 @@
 ---
-title: Preprocessing outline
+title: Preprocessing-GP with Spotify Data
 author: Ezgi Karaesmen
 date: '2020-05-27'
 slug: preprocessing-outline
@@ -34,14 +34,14 @@ library(lubridate)
 
 ## The Spotify Data `r emo::ji("musical_note")` from `#TidyTuesday` 
 
-For today's exercise we do not need track/album/artist name or Spotify ID specific columns, so we will remove them. We should transform character columns into factor for modeling. We also extract year from the date column.
+For today's exercise we do not need track/album/artist name or Spotify ID specific columns, so we will remove them. We also extract release year from the date column.
 
 ```{r}
-spotify_songs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv') %>%
+spotify_songs0 <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv') 
+spotify_songs <- spotify_songs0 %>%
   mutate(track_album_release_date = as_date(track_album_release_date),
          track_album_release_year = as.numeric(year(track_album_release_date))
          ) %>%
-  mutate_if(is.character, as.factor) %>%
   select(-contains("id"), -contains("name"), -track_artist, -track_album_release_date) %>%
   drop_na()
 
@@ -200,3 +200,19 @@ juice(umap_prep) %>%
   ggplot(aes(umap_1, umap_2)) +
   geom_point(aes(color = playlist_genre), alpha = 0.7, size = 2)
 ```
+
+## Are songs classified in more than one genre?
+
+```{r}
+library(UpSetR)
+
+spotify_songs0 %>% 
+  group_by(track_id, playlist_genre) %>%
+  count() %>% 
+  ungroup() %>% 
+  mutate(n=ifelse(n>0, 1, 0)) %>% 
+  spread(playlist_genre, n, fill = 0) %>%
+  mutate_if(is.numeric, as.integer) -> upset_dat
+  upset(as.data.frame(upset_dat), nsets = 6)
+```
+
