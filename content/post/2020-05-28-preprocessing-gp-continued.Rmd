@@ -1,0 +1,199 @@
+---
+title: Preprocessing-GP Continued...
+author: Ezgi
+date: '2020-05-28'
+slug: preprocessing-gp-continued
+output: 
+  blogdown::html_page:
+    toc: true
+categories:
+  - primer
+tags:
+  - preprocessing
+  - good practice
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, error = FALSE, warning = FALSE)
+library(tidyverse)
+library(tidymodels)
+```
+
+
+Let's keep checking out some other dataset shall we?
+
+# Pottery dataset
+
+The data give the chemical composition of ancient pottery found at four sites in Great Britain. [See doc](https://vincentarelbundock.github.io/Rdatasets/doc/carData/Pottery.html)
+
+```{r}
+pottery <- read_csv("https://vincentarelbundock.github.io/Rdatasets/csv/carData/Pottery.csv")
+glimpse(pottery)
+summary(pottery)
+
+pottery %>%
+  count(Site)
+
+
+pca_rec <- recipe(~., data = pottery) %>%
+  update_role(X1, Site, new_role = "id") %>%
+  step_normalize(all_predictors()) %>%
+  step_pca(all_predictors())
+
+pca_prep <- prep(pca_rec)
+```
+
+## Contribution by variable
+
+```{r}
+tidied_pca <- tidy(pca_prep, 2)
+
+tidied_pca %>%
+  filter(component %in% paste0("PC", 1:5)) %>%
+  mutate(component = fct_inorder(component)) %>%
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component, nrow = 1) +
+  labs(y = NULL)
+
+library(tidytext)
+
+tidied_pca %>%
+  filter(component %in% paste0("PC", 1:4)) %>%
+  group_by(component) %>%
+  top_n(8, abs(value)) %>%
+  ungroup() %>%
+  mutate(terms = reorder_within(terms, abs(value), component)) %>%
+  ggplot(aes(abs(value), terms, fill = value > 0)) +
+  geom_col() +
+  facet_wrap(~component, scales = "free_y") +
+  scale_y_reordered() +
+  labs(
+    x = "Absolute value of contribution",
+    y = NULL, fill = "Positive?"
+  )
+
+```
+
+## PCA
+
+```{r}
+juice(pca_prep) %>%
+  ggplot(aes(PC1, PC2)) +
+  geom_point(aes(color = Site), alpha = 0.7, size = 2)
+```
+
+## UMAP
+
+```{r}
+set.seed(9876)
+
+library(embed)
+umap_rec <- recipe(~., data = pottery) %>%
+  update_role(X1, Site, new_role = "id") %>%
+  step_normalize(all_predictors()) %>%
+  step_umap(all_predictors())
+
+umap_prep <- prep(umap_rec)
+
+juice(umap_prep) %>%
+  ggplot(aes(umap_1, umap_2)) +
+  geom_point(aes(color = Site), alpha = 0.7, size = 2)
+
+```
+
+
+## Actual Map
+
+If iframe is giving me a hard time here's the [map link](https://www.google.com/maps/d/drive?state=%7B%22ids%22%3A%5B%221LpiNnGfzSmi8lkOsFDvGbJkf7JMjfvAu%22%5D%2C%22action%22%3A%22open%22%2C%22userId%22%3A%22116929632846172529102%22%7D&usp=sharing)
+
+<iframe src="https://www.google.com/maps/d/u/0/embed?mid=1LpiNnGfzSmi8lkOsFDvGbJkf7JMjfvAu" width="640" height="480"></iframe>
+
+# Wine quality
+
+The Wine Quality Dataset involves predicting the quality of white wines on a scale given chemical measures of each wine. [See](http://archive.ics.uci.edu/ml/datasets/Wine+Quality)
+
+
+
+```{r}
+foo1 <- function(x) ifelse(str_detect(x, "^[.]"), paste0("0", x), x) 
+foo2 <- function(x) map_chr(x, foo1)
+
+wine <- read_csv2("http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv")
+
+wine %>%
+  mutate_if(is.character, foo2) %>%
+  mutate_if(is.character, as.numeric) -> wine
+
+glimpse(wine)
+summary(wine)
+
+pca_rec <- recipe(~., data = wine) %>%
+  update_role(quality, new_role = "id") %>%
+  step_normalize(all_predictors()) %>%
+  step_pca(all_predictors())
+
+pca_prep <- prep(pca_rec)
+```
+
+## Contribution by variable
+
+```{r}
+tidied_pca <- tidy(pca_prep, 2)
+
+tidied_pca %>%
+  filter(component %in% paste0("PC", 1:5)) %>%
+  mutate(component = fct_inorder(component)) %>%
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component, nrow = 1) +
+  labs(y = NULL)
+
+library(tidytext)
+
+tidied_pca %>%
+  filter(component %in% paste0("PC", 1:4)) %>%
+  group_by(component) %>%
+  top_n(8, abs(value)) %>%
+  ungroup() %>%
+  mutate(terms = reorder_within(terms, abs(value), component)) %>%
+  ggplot(aes(abs(value), terms, fill = value > 0)) +
+  geom_col() +
+  facet_wrap(~component, scales = "free_y") +
+  scale_y_reordered() +
+  labs(
+    x = "Absolute value of contribution",
+    y = NULL, fill = "Positive?"
+  )
+```
+
+## PCA
+
+```{r}
+juice(pca_prep) %>%
+  ggplot(aes(PC1, PC2)) +
+  geom_point(aes(color = quality), alpha = 0.7, size = 2) +
+  scale_color_viridis_c()
+```
+
+## UMAP
+
+```{r}
+library(embed)
+
+set.seed(9876)
+
+umap_rec <- recipe(~., data = wine) %>%
+  update_role(quality, new_role = "id") %>%
+  step_normalize(all_predictors()) %>%
+  step_umap(all_predictors())
+
+umap_prep <- prep(umap_rec)
+
+juice(umap_prep) %>%
+  ggplot(aes(umap_1, umap_2)) +
+  geom_point(aes(color = quality), alpha = 0.7, size = 2) +
+  scale_color_viridis_c()
+```
+

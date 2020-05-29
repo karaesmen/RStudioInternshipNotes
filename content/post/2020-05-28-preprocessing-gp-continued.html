@@ -1,0 +1,251 @@
+---
+title: Preprocessing-GP Continued...
+author: Ezgi
+date: '2020-05-28'
+slug: preprocessing-gp-continued
+output: 
+  blogdown::html_page:
+    toc: true
+categories:
+  - primer
+tags:
+  - preprocessing
+  - good practice
+---
+
+
+<div id="TOC">
+<ul>
+<li><a href="#pottery-dataset">Pottery dataset</a><ul>
+<li><a href="#contribution-by-variable">Contribution by variable</a></li>
+<li><a href="#pca">PCA</a></li>
+<li><a href="#umap">UMAP</a></li>
+<li><a href="#actual-map">Actual Map</a></li>
+</ul></li>
+<li><a href="#wine-quality">Wine quality</a><ul>
+<li><a href="#contribution-by-variable-1">Contribution by variable</a></li>
+<li><a href="#pca-1">PCA</a></li>
+<li><a href="#umap-1">UMAP</a></li>
+</ul></li>
+</ul>
+</div>
+
+<p>Let’s keep checking out some other dataset shall we?</p>
+<div id="pottery-dataset" class="section level1">
+<h1>Pottery dataset</h1>
+<p>The data give the chemical composition of ancient pottery found at four sites in Great Britain. <a href="https://vincentarelbundock.github.io/Rdatasets/doc/carData/Pottery.html">See doc</a></p>
+<pre class="r"><code>pottery &lt;- read_csv(&quot;https://vincentarelbundock.github.io/Rdatasets/csv/carData/Pottery.csv&quot;)
+glimpse(pottery)</code></pre>
+<pre><code>## Rows: 26
+## Columns: 7
+## $ X1   &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 1…
+## $ Site &lt;chr&gt; &quot;Llanedyrn&quot;, &quot;Llanedyrn&quot;, &quot;Llanedyrn&quot;, &quot;Llanedyrn&quot;, &quot;Llanedyrn&quot;,…
+## $ Al   &lt;dbl&gt; 14.4, 13.8, 14.6, 11.5, 13.8, 10.9, 10.1, 11.6, 11.1, 13.4, 12.4…
+## $ Fe   &lt;dbl&gt; 7.00, 7.08, 7.09, 6.37, 7.06, 6.26, 4.26, 5.78, 5.49, 6.92, 6.13…
+## $ Mg   &lt;dbl&gt; 4.30, 3.43, 3.88, 5.64, 5.34, 3.47, 4.26, 5.91, 4.52, 7.23, 5.69…
+## $ Ca   &lt;dbl&gt; 0.15, 0.12, 0.13, 0.16, 0.20, 0.17, 0.20, 0.18, 0.29, 0.28, 0.22…
+## $ Na   &lt;dbl&gt; 0.51, 0.17, 0.20, 0.14, 0.20, 0.22, 0.18, 0.16, 0.30, 0.20, 0.54…</code></pre>
+<pre class="r"><code>summary(pottery)</code></pre>
+<pre><code>##        X1            Site                 Al              Fe       
+##  Min.   : 1.00   Length:26          Min.   :10.10   Min.   :0.920  
+##  1st Qu.: 7.25   Class :character   1st Qu.:11.95   1st Qu.:1.700  
+##  Median :13.50   Mode  :character   Median :13.80   Median :5.465  
+##  Mean   :13.50                      Mean   :14.49   Mean   :4.468  
+##  3rd Qu.:19.75                      3rd Qu.:17.45   3rd Qu.:6.590  
+##  Max.   :26.00                      Max.   :20.80   Max.   :7.090  
+##        Mg              Ca               Na        
+##  Min.   :0.530   Min.   :0.0100   Min.   :0.0300  
+##  1st Qu.:0.670   1st Qu.:0.0600   1st Qu.:0.0500  
+##  Median :3.825   Median :0.1550   Median :0.1500  
+##  Mean   :3.142   Mean   :0.1465   Mean   :0.1585  
+##  3rd Qu.:4.503   3rd Qu.:0.2150   3rd Qu.:0.2150  
+##  Max.   :7.230   Max.   :0.3100   Max.   :0.5400</code></pre>
+<pre class="r"><code>pottery %&gt;%
+  count(Site)</code></pre>
+<pre><code>## # A tibble: 4 x 2
+##   Site            n
+##   &lt;chr&gt;       &lt;int&gt;
+## 1 AshleyRails     5
+## 2 Caldicot        2
+## 3 IsleThorns      5
+## 4 Llanedyrn      14</code></pre>
+<pre class="r"><code>pca_rec &lt;- recipe(~., data = pottery) %&gt;%
+  update_role(X1, Site, new_role = &quot;id&quot;) %&gt;%
+  step_normalize(all_predictors()) %&gt;%
+  step_pca(all_predictors())
+
+pca_prep &lt;- prep(pca_rec)</code></pre>
+<div id="contribution-by-variable" class="section level2">
+<h2>Contribution by variable</h2>
+<pre class="r"><code>tidied_pca &lt;- tidy(pca_prep, 2)
+
+tidied_pca %&gt;%
+  filter(component %in% paste0(&quot;PC&quot;, 1:5)) %&gt;%
+  mutate(component = fct_inorder(component)) %&gt;%
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component, nrow = 1) +
+  labs(y = NULL)</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code>library(tidytext)
+
+tidied_pca %&gt;%
+  filter(component %in% paste0(&quot;PC&quot;, 1:4)) %&gt;%
+  group_by(component) %&gt;%
+  top_n(8, abs(value)) %&gt;%
+  ungroup() %&gt;%
+  mutate(terms = reorder_within(terms, abs(value), component)) %&gt;%
+  ggplot(aes(abs(value), terms, fill = value &gt; 0)) +
+  geom_col() +
+  facet_wrap(~component, scales = &quot;free_y&quot;) +
+  scale_y_reordered() +
+  labs(
+    x = &quot;Absolute value of contribution&quot;,
+    y = NULL, fill = &quot;Positive?&quot;
+  )</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
+</div>
+<div id="pca" class="section level2">
+<h2>PCA</h2>
+<pre class="r"><code>juice(pca_prep) %&gt;%
+  ggplot(aes(PC1, PC2)) +
+  geom_point(aes(color = Site), alpha = 0.7, size = 2)</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+</div>
+<div id="umap" class="section level2">
+<h2>UMAP</h2>
+<pre class="r"><code>set.seed(9876)
+
+library(embed)
+umap_rec &lt;- recipe(~., data = pottery) %&gt;%
+  update_role(X1, Site, new_role = &quot;id&quot;) %&gt;%
+  step_normalize(all_predictors()) %&gt;%
+  step_umap(all_predictors())
+
+umap_prep &lt;- prep(umap_rec)
+
+juice(umap_prep) %&gt;%
+  ggplot(aes(umap_1, umap_2)) +
+  geom_point(aes(color = Site), alpha = 0.7, size = 2)</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+</div>
+<div id="actual-map" class="section level2">
+<h2>Actual Map</h2>
+<p>If iframe is giving me a hard time here’s the <a href="https://www.google.com/maps/d/drive?state=%7B%22ids%22%3A%5B%221LpiNnGfzSmi8lkOsFDvGbJkf7JMjfvAu%22%5D%2C%22action%22%3A%22open%22%2C%22userId%22%3A%22116929632846172529102%22%7D&amp;usp=sharing">map link</a></p>
+<iframe src="https://www.google.com/maps/d/u/0/embed?mid=1LpiNnGfzSmi8lkOsFDvGbJkf7JMjfvAu" width="640" height="480">
+</iframe>
+</div>
+</div>
+<div id="wine-quality" class="section level1">
+<h1>Wine quality</h1>
+<p>The Wine Quality Dataset involves predicting the quality of white wines on a scale given chemical measures of each wine. <a href="http://archive.ics.uci.edu/ml/datasets/Wine+Quality">See</a></p>
+<pre class="r"><code>foo1 &lt;- function(x) ifelse(str_detect(x, &quot;^[.]&quot;), paste0(&quot;0&quot;, x), x) 
+foo2 &lt;- function(x) map_chr(x, foo1)
+
+wine &lt;- read_csv2(&quot;http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv&quot;)
+
+wine %&gt;%
+  mutate_if(is.character, foo2) %&gt;%
+  mutate_if(is.character, as.numeric) -&gt; wine
+
+glimpse(wine)</code></pre>
+<pre><code>## Rows: 4,898
+## Columns: 12
+## $ `fixed acidity`        &lt;dbl&gt; 7, 63, 81, 72, 72, 81, 62, 7, 63, 81, 81, 86, …
+## $ `volatile acidity`     &lt;dbl&gt; 0.27, 0.30, 0.28, 0.23, 0.23, 0.28, 0.32, 0.27…
+## $ `citric acid`          &lt;dbl&gt; 0.36, 0.34, 0.40, 0.32, 0.32, 0.40, 0.16, 0.36…
+## $ `residual sugar`       &lt;dbl&gt; 20.70, 1.60, 6.90, 8.50, 8.50, 6.90, 7.00, 20.…
+## $ chlorides              &lt;dbl&gt; 0.045, 0.049, 0.050, 0.058, 0.058, 0.050, 0.04…
+## $ `free sulfur dioxide`  &lt;dbl&gt; 45, 14, 30, 47, 47, 30, 30, 45, 14, 28, 11, 17…
+## $ `total sulfur dioxide` &lt;dbl&gt; 170, 132, 97, 186, 186, 97, 136, 170, 132, 129…
+## $ density                &lt;dbl&gt; 1.0010, 0.9940, 0.9951, 0.9956, 0.9956, 0.9951…
+## $ pH                     &lt;dbl&gt; 3, 33, 326, 319, 319, 326, 318, 3, 33, 322, 29…
+## $ sulphates              &lt;dbl&gt; 0.45, 0.49, 0.44, 0.40, 0.40, 0.44, 0.47, 0.45…
+## $ alcohol                &lt;dbl&gt; 88, 95, 101, 99, 99, 101, 96, 88, 95, 11, 12, …
+## $ quality                &lt;dbl&gt; 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 5, 5, 5, 7, 5, 7…</code></pre>
+<pre class="r"><code>summary(wine)</code></pre>
+<pre><code>##  fixed acidity    volatile acidity  citric acid     residual sugar  
+##  Min.   :  5.00   Min.   :0.0800   Min.   :0.0000   Min.   : 0.600  
+##  1st Qu.: 61.00   1st Qu.:0.2100   1st Qu.:0.2700   1st Qu.: 1.700  
+##  Median : 67.00   Median :0.2600   Median :0.3200   Median : 5.200  
+##  Mean   : 62.41   Mean   :0.2782   Mean   :0.3342   Mean   : 6.391  
+##  3rd Qu.: 73.00   3rd Qu.:0.3200   3rd Qu.:0.3900   3rd Qu.: 9.900  
+##  Max.   :715.00   Max.   :1.1000   Max.   :1.6600   Max.   :65.800  
+##    chlorides       free sulfur dioxide total sulfur dioxide    density      
+##  Min.   :0.00900   Min.   :   2.00     Min.   :   9.0       Min.   :0.9871  
+##  1st Qu.:0.03600   1st Qu.:  23.00     1st Qu.: 108.0       1st Qu.:0.9917  
+##  Median :0.04300   Median :  34.00     Median : 134.0       Median :0.9937  
+##  Mean   :0.04577   Mean   :  41.01     Mean   : 148.6       Mean   :0.9940  
+##  3rd Qu.:0.05000   3rd Qu.:  46.00     3rd Qu.: 167.8       3rd Qu.:0.9961  
+##  Max.   :0.34600   Max.   :1465.00     Max.   :3665.0       Max.   :1.0390  
+##        pH          sulphates         alcohol             quality     
+##  Min.   :  3.0   Min.   :0.2200   Min.   :8.000e+00   Min.   :3.000  
+##  1st Qu.:304.0   1st Qu.:0.4100   1st Qu.:9.200e+01   1st Qu.:5.000  
+##  Median :316.0   Median :0.4700   Median :1.010e+02   Median :6.000  
+##  Mean   :287.1   Mean   :0.4898   Mean   :1.823e+12   Mean   :5.878  
+##  3rd Qu.:326.0   3rd Qu.:0.5500   3rd Qu.:1.130e+02   3rd Qu.:6.000  
+##  Max.   :382.0   Max.   :1.0800   Max.   :9.733e+14   Max.   :9.000</code></pre>
+<pre class="r"><code>pca_rec &lt;- recipe(~., data = wine) %&gt;%
+  update_role(quality, new_role = &quot;id&quot;) %&gt;%
+  step_normalize(all_predictors()) %&gt;%
+  step_pca(all_predictors())
+
+pca_prep &lt;- prep(pca_rec)</code></pre>
+<div id="contribution-by-variable-1" class="section level2">
+<h2>Contribution by variable</h2>
+<pre class="r"><code>tidied_pca &lt;- tidy(pca_prep, 2)
+
+tidied_pca %&gt;%
+  filter(component %in% paste0(&quot;PC&quot;, 1:5)) %&gt;%
+  mutate(component = fct_inorder(component)) %&gt;%
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component, nrow = 1) +
+  labs(y = NULL)</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>library(tidytext)
+
+tidied_pca %&gt;%
+  filter(component %in% paste0(&quot;PC&quot;, 1:4)) %&gt;%
+  group_by(component) %&gt;%
+  top_n(8, abs(value)) %&gt;%
+  ungroup() %&gt;%
+  mutate(terms = reorder_within(terms, abs(value), component)) %&gt;%
+  ggplot(aes(abs(value), terms, fill = value &gt; 0)) +
+  geom_col() +
+  facet_wrap(~component, scales = &quot;free_y&quot;) +
+  scale_y_reordered() +
+  labs(
+    x = &quot;Absolute value of contribution&quot;,
+    y = NULL, fill = &quot;Positive?&quot;
+  )</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-6-2.png" width="672" /></p>
+</div>
+<div id="pca-1" class="section level2">
+<h2>PCA</h2>
+<pre class="r"><code>juice(pca_prep) %&gt;%
+  ggplot(aes(PC1, PC2)) +
+  geom_point(aes(color = quality), alpha = 0.7, size = 2) +
+  scale_color_viridis_c()</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+</div>
+<div id="umap-1" class="section level2">
+<h2>UMAP</h2>
+<pre class="r"><code>library(embed)
+
+set.seed(9876)
+
+umap_rec &lt;- recipe(~., data = wine) %&gt;%
+  update_role(quality, new_role = &quot;id&quot;) %&gt;%
+  step_normalize(all_predictors()) %&gt;%
+  step_umap(all_predictors())
+
+umap_prep &lt;- prep(umap_rec)
+
+juice(umap_prep) %&gt;%
+  ggplot(aes(umap_1, umap_2)) +
+  geom_point(aes(color = quality), alpha = 0.7, size = 2) +
+  scale_color_viridis_c()</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+</div>
+</div>
