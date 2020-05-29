@@ -16,7 +16,7 @@ tags:
 
 <div id="TOC">
 <ul>
-<li><a href="#pottery-dataset">Pottery dataset</a><ul>
+<li><a href="#ancient-pottery">Ancient Pottery</a><ul>
 <li><a href="#contribution-by-variable">Contribution by variable</a></li>
 <li><a href="#pca">PCA</a></li>
 <li><a href="#umap">UMAP</a></li>
@@ -27,12 +27,17 @@ tags:
 <li><a href="#pca-1">PCA</a></li>
 <li><a href="#umap-1">UMAP</a></li>
 </ul></li>
+<li><a href="#zoo">Zoo</a><ul>
+<li><a href="#contribution-by-variable-2">Contribution by variable</a></li>
+<li><a href="#pca-2">PCA</a></li>
+<li><a href="#umap-2">UMAP</a></li>
+</ul></li>
 </ul>
 </div>
 
-<p>Let’s keep checking out some other dataset shall we?</p>
-<div id="pottery-dataset" class="section level1">
-<h1>Pottery dataset</h1>
+<p>Let’s keep checking out some other datasets shall we?</p>
+<div id="ancient-pottery" class="section level1">
+<h1>Ancient Pottery</h1>
 <p>The data give the chemical composition of ancient pottery found at four sites in Great Britain. <a href="https://vincentarelbundock.github.io/Rdatasets/doc/carData/Pottery.html">See doc</a></p>
 <pre class="r"><code>pottery &lt;- read_csv(&quot;https://vincentarelbundock.github.io/Rdatasets/csv/carData/Pottery.csv&quot;)
 glimpse(pottery)</code></pre>
@@ -247,5 +252,126 @@ juice(umap_prep) %&gt;%
   geom_point(aes(color = quality), alpha = 0.7, size = 2) +
   scale_color_viridis_c()</code></pre>
 <p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+</div>
+</div>
+<div id="zoo" class="section level1">
+<h1>Zoo</h1>
+<p>This <code>zoo</code> sure needs some tidying…</p>
+<pre class="r"><code>zoo_names &lt;- scan(text=&quot;animal_name
+hair
+feathers
+eggs
+milk
+airborne
+aquatic
+predator
+toothed
+backbone
+breathes
+venomous
+fins
+legs
+tail
+domestic
+catsize
+class&quot;, what=&quot;character&quot;)
+anim_types &lt;- tribble(~class, ~type,
+                      1, &quot;mammal&quot;,
+                      2, &quot;bird&quot;,
+                      3, &quot;reptile&quot;,
+                      4, &quot;fish&quot;,
+                      5, &quot;amphibian&quot;,
+                      6, &quot;insect&quot;,
+                      7, &quot;other_arthropods&quot;)
+
+zoo &lt;- 
+  read_csv(&quot;http://archive.ics.uci.edu/ml/machine-learning-databases/zoo/zoo.data&quot;, 
+           col_names = zoo_names) %&gt;%
+  left_join(anim_types) %&gt;%
+  select(-class)
+
+glimpse(zoo)</code></pre>
+<pre><code>## Rows: 101
+## Columns: 18
+## $ animal_name &lt;chr&gt; &quot;aardvark&quot;, &quot;antelope&quot;, &quot;bass&quot;, &quot;bear&quot;, &quot;boar&quot;, &quot;buffalo&quot;…
+## $ hair        &lt;dbl&gt; 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, …
+## $ feathers    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, …
+## $ eggs        &lt;dbl&gt; 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, …
+## $ milk        &lt;dbl&gt; 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, …
+## $ airborne    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, …
+## $ aquatic     &lt;dbl&gt; 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, …
+## $ predator    &lt;dbl&gt; 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, …
+## $ toothed     &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, …
+## $ backbone    &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, …
+## $ breathes    &lt;dbl&gt; 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, …
+## $ venomous    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+## $ fins        &lt;dbl&gt; 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, …
+## $ legs        &lt;dbl&gt; 4, 4, 0, 4, 4, 4, 4, 0, 0, 4, 4, 2, 0, 0, 4, 6, 2, 4, 0, …
+## $ tail        &lt;dbl&gt; 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, …
+## $ domestic    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, …
+## $ catsize     &lt;dbl&gt; 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, …
+## $ type        &lt;chr&gt; &quot;mammal&quot;, &quot;mammal&quot;, &quot;fish&quot;, &quot;mammal&quot;, &quot;mammal&quot;, &quot;mammal&quot;,…</code></pre>
+<pre class="r"><code>pca_rec &lt;- recipe(~., data = zoo) %&gt;%
+  update_role(animal_name, type, new_role = &quot;id&quot;) %&gt;%
+  step_normalize(all_predictors()) %&gt;%
+  step_pca(all_predictors())
+
+pca_prep &lt;- prep(pca_rec)
+tidied_pca &lt;- tidy(pca_prep, 2)</code></pre>
+<div id="contribution-by-variable-2" class="section level2">
+<h2>Contribution by variable</h2>
+<pre class="r"><code>tidied_pca %&gt;%
+  filter(component %in% paste0(&quot;PC&quot;, 1:5)) %&gt;%
+  mutate(component = fct_inorder(component)) %&gt;%
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component, nrow = 1) +
+  labs(y = NULL)</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<pre class="r"><code>library(tidytext)
+
+tidied_pca %&gt;%
+  filter(component %in% paste0(&quot;PC&quot;, 1:4)) %&gt;%
+  group_by(component) %&gt;%
+  top_n(8, abs(value)) %&gt;%
+  ungroup() %&gt;%
+  mutate(terms = reorder_within(terms, abs(value), component)) %&gt;%
+  ggplot(aes(abs(value), terms, fill = value &gt; 0)) +
+  geom_col() +
+  facet_wrap(~component, scales = &quot;free_y&quot;) +
+  scale_y_reordered() +
+  labs(
+    x = &quot;Absolute value of contribution&quot;,
+    y = NULL, fill = &quot;Positive?&quot;
+  )</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-11-2.png" width="672" /></p>
+</div>
+<div id="pca-2" class="section level2">
+<h2>PCA</h2>
+<pre class="r"><code>juice(pca_prep) %&gt;%
+  ggplot(aes(PC1, PC2, label=animal_name)) +
+  geom_point(aes(color = type), alpha = 0.7, size = 2)+
+  geom_text(check_overlap = TRUE, hjust = &quot;inward&quot;) +
+  labs(color = NULL)</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+</div>
+<div id="umap-2" class="section level2">
+<h2>UMAP</h2>
+<pre class="r"><code>library(embed)
+set.seed(9876)
+
+umap_rec &lt;- recipe(~., data = zoo) %&gt;%
+  update_role(animal_name, type, new_role = &quot;id&quot;) %&gt;%
+  step_normalize(all_predictors()) %&gt;%
+  step_umap(all_predictors())
+
+umap_prep &lt;- prep(umap_rec)
+
+juice(umap_prep) %&gt;%
+  ggplot(aes(umap_1, umap_2, label=animal_name)) +
+  geom_point(aes(color = type), alpha = 0.7, size = 2)+
+  geom_text(check_overlap = TRUE, hjust = &quot;inward&quot;) +
+  labs(color = NULL)</code></pre>
+<p><img src="/post/2020-05-28-preprocessing-gp-continued_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
 </div>
 </div>

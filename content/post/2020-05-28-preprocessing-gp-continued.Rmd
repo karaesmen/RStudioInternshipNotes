@@ -21,9 +21,9 @@ library(tidymodels)
 ```
 
 
-Let's keep checking out some other dataset shall we?
+Let's keep checking out some other datasets shall we?
 
-# Pottery dataset
+# Ancient Pottery
 
 The data give the chemical composition of ancient pottery found at four sites in Great Britain. [See doc](https://vincentarelbundock.github.io/Rdatasets/doc/carData/Pottery.html)
 
@@ -115,7 +115,6 @@ If iframe is giving me a hard time here's the [map link](https://www.google.com/
 The Wine Quality Dataset involves predicting the quality of white wines on a scale given chemical measures of each wine. [See](http://archive.ics.uci.edu/ml/datasets/Wine+Quality)
 
 
-
 ```{r}
 foo1 <- function(x) ifelse(str_detect(x, "^[.]"), paste0("0", x), x) 
 foo2 <- function(x) map_chr(x, foo1)
@@ -195,5 +194,117 @@ juice(umap_prep) %>%
   ggplot(aes(umap_1, umap_2)) +
   geom_point(aes(color = quality), alpha = 0.7, size = 2) +
   scale_color_viridis_c()
+```
+
+# Zoo 
+
+This `zoo` sure needs some tidying...
+
+```{r}
+zoo_names <- scan(text="animal_name
+hair
+feathers
+eggs
+milk
+airborne
+aquatic
+predator
+toothed
+backbone
+breathes
+venomous
+fins
+legs
+tail
+domestic
+catsize
+class", what="character")
+anim_types <- tribble(~class, ~type,
+                      1, "mammal",
+                      2, "bird",
+                      3, "reptile",
+                      4, "fish",
+                      5, "amphibian",
+                      6, "insect",
+                      7, "other_arthropods")
+
+zoo <- 
+  read_csv("http://archive.ics.uci.edu/ml/machine-learning-databases/zoo/zoo.data", 
+           col_names = zoo_names) %>%
+  left_join(anim_types) %>%
+  select(-class)
+
+glimpse(zoo)
+
+```
+
+```{r}
+pca_rec <- recipe(~., data = zoo) %>%
+  update_role(animal_name, type, new_role = "id") %>%
+  step_normalize(all_predictors()) %>%
+  step_pca(all_predictors())
+
+pca_prep <- prep(pca_rec)
+tidied_pca <- tidy(pca_prep, 2)
+```
+
+
+## Contribution by variable
+
+```{r}
+tidied_pca %>%
+  filter(component %in% paste0("PC", 1:5)) %>%
+  mutate(component = fct_inorder(component)) %>%
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component, nrow = 1) +
+  labs(y = NULL)
+
+library(tidytext)
+
+tidied_pca %>%
+  filter(component %in% paste0("PC", 1:4)) %>%
+  group_by(component) %>%
+  top_n(8, abs(value)) %>%
+  ungroup() %>%
+  mutate(terms = reorder_within(terms, abs(value), component)) %>%
+  ggplot(aes(abs(value), terms, fill = value > 0)) +
+  geom_col() +
+  facet_wrap(~component, scales = "free_y") +
+  scale_y_reordered() +
+  labs(
+    x = "Absolute value of contribution",
+    y = NULL, fill = "Positive?"
+  )
+```
+
+## PCA
+
+```{r}
+juice(pca_prep) %>%
+  ggplot(aes(PC1, PC2, label=animal_name)) +
+  geom_point(aes(color = type), alpha = 0.7, size = 2)+
+  geom_text(check_overlap = TRUE, hjust = "inward") +
+  labs(color = NULL)
+```
+
+## UMAP
+
+```{r}
+library(embed)
+set.seed(9876)
+
+umap_rec <- recipe(~., data = zoo) %>%
+  update_role(animal_name, type, new_role = "id") %>%
+  step_normalize(all_predictors()) %>%
+  step_umap(all_predictors())
+
+umap_prep <- prep(umap_rec)
+
+juice(umap_prep) %>%
+  ggplot(aes(umap_1, umap_2, label=animal_name)) +
+  geom_point(aes(color = type), alpha = 0.7, size = 2)+
+  geom_text(check_overlap = TRUE, hjust = "inward") +
+  labs(color = NULL)
 ```
 
